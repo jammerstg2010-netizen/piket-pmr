@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Admin Dashboard - PMR UKS</title>
-  <!-- SCRIPT SUPABASE & SORTABLE CDN TERBARU -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -20,6 +19,7 @@
 
     .hidden { display: none !important; }
 
+    /* LOGIN FORM */
     .login-card {
       background: white;
       max-width: 360px;
@@ -32,7 +32,6 @@
 
     .login-card h2 { color: #ff7e5f; margin-bottom: 16px; font-weight: 700; font-size: 20px; }
     .form-control { width: 100%; padding: 10px 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; }
-    .form-control:focus { border-color: #ff7e5f; }
 
     .btn-login {
       width: 100%;
@@ -44,9 +43,9 @@
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
-      margin-top: 5px;
     }
 
+    /* HEADER DASHBOARD */
     .dashboard-header {
       background: white;
       padding: 14px 16px;
@@ -64,6 +63,24 @@
 
     .header-title h2 { color: #2b6cb0; font-size: 18px; }
     .header-title p { font-size: 12px; color: #718096; }
+
+    /* TOMBOL SIMPAN JADWAL */
+    .btn-save {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+      transition: transform 0.1s;
+    }
+
+    .btn-save:active { transform: scale(0.98); }
 
     .container-drag { display: grid; grid-template-columns: 1fr; gap: 14px; }
 
@@ -133,7 +150,7 @@
 
       <div style="display: flex; align-items: center; gap: 8px;">
         <label style="font-size: 12px; font-weight: 600;">Hari:</label>
-        <select id="select-hari" class="form-control" style="width: auto; margin-bottom: 0; padding: 6px 10px;">
+        <select id="select-hari" class="form-control" style="width: auto; margin-bottom: 0; padding: 6px 10px;" onchange="loadCurrentSchedule()">
           <option value="Senin">Senin</option>
           <option value="Selasa">Selasa</option>
           <option value="Rabu">Rabu</option>
@@ -143,7 +160,7 @@
       </div>
     </div>
 
-    <!-- DRAG AREA COMPACT -->
+    <!-- DRAG AREA -->
     <div class="container-drag">
       <div class="box-drag">
         <h3>👥 Master Member</h3>
@@ -161,12 +178,15 @@
         <div id="slot-ist-2" class="drop-zone"></div>
       </div>
     </div>
+
+    <!-- TOMBOL SUBMIT SIMPAN -->
+    <button class="btn-save" onclick="saveSchedule()">💾 Simpan & Terbitkan Jadwal Hari Ini</button>
+    <p id="save-status" style="text-align: center; font-size: 13px; font-weight: 700; margin-top: 10px;"></p>
   </div>
 
   <script>
     const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
-    
     let supabaseClient = null;
 
     function handleLogin(e) {
@@ -178,7 +198,6 @@
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('admin-dashboard').classList.remove('hidden');
         
-        // Inisialisasi Supabase setelah login
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           loadMembersAdmin();
@@ -223,9 +242,56 @@
       }
     }
 
-    document.getElementById('select-hari').addEventListener('change', (e) => {
-      document.getElementById('box-ist-2').style.display = e.target.value === 'Jumat' ? 'none' : 'block';
-    });
+    // SIMPAN JADWAL KE SUPABASE DATABASE
+    async function saveSchedule() {
+      const status = document.getElementById('save-status');
+      status.style.color = "#3182ce";
+      status.innerText = "⏳ Menyimpan jadwal ke database...";
+
+      const hari = document.getElementById('select-hari').value;
+      const slot1Items = document.querySelectorAll('#slot-ist-1 .drag-item');
+      const slot2Items = document.querySelectorAll('#slot-ist-2 .drag-item');
+
+      let insertData = [];
+
+      slot1Items.forEach(item => {
+        insertData.push({
+          hari: hari,
+          shift: 'Istirahat 1',
+          member_id: item.getAttribute('data-id')
+        });
+      });
+
+      if(hari !== 'Jumat') {
+        slot2Items.forEach(item => {
+          insertData.push({
+            hari: hari,
+            shift: 'Istirahat 2',
+            member_id: item.getAttribute('data-id')
+          });
+        });
+      }
+
+      if(insertData.length === 0) {
+        status.style.color = "#e53e3e";
+        status.innerText = "❌ Tarik minimal 1 anggota ke slot Istirahat sebelum menyimpan!";
+        return;
+      }
+
+      // Hapus Jadwal Lama Hari Tersebut
+      await supabaseClient.from('piket_schedule').delete().eq('hari', hari);
+
+      // Insert Jadwal Baru
+      const { error } = await supabaseClient.from('piket_schedule').insert(insertData);
+
+      if(error) {
+        status.style.color = "#e53e3e";
+        status.innerText = "❌ Gagal menyimpan jadwal: " + error.message;
+      } else {
+        status.style.color = "#38a169";
+        status.innerText = "✅ Jadwal hari " + hari + " berhasil diterbitkan dan langsung muncul di dashboard siswa!";
+      }
+    }
   </script>
 </body>
 </html>

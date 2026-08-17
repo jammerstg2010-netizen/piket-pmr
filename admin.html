@@ -3,119 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Piket UKS PMR</title>
+  <title>Admin Panel - Piket UKS PMR</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { background: #f0f4f8; padding: 20px; color: #2d3748; }
-    .container { max-width: 1000px; margin: 0 auto; }
     
-    .header { background: #3182ce; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-    .header h1 { font-size: 20px; }
-
-    .grid-container { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
-    @media (max-width: 768px) { .grid-container { grid-template-columns: 1fr; } }
-
-    .card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .card h2 { font-size: 16px; color: #2b6cb0; margin-bottom: 12px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; }
-
-    /* Drag & Drop Styling */
-    .drag-list { min-height: 120px; background: #f7fafc; border: 2px dashed #cbd5e0; border-radius: 8px; padding: 10px; }
-    .drop-zone { min-height: 160px; background: #ebf8ff; border: 2px dashed #63b3ed; border-radius: 8px; padding: 10px; }
-    
-    .draggable-item {
-      background: white; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px;
-      margin-bottom: 8px; cursor: grab; display: flex; justify-content: space-between; align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02); user-select: none;
+    body {
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #2d3748;
     }
-    .draggable-item:active { cursor: grabbing; background: #e2e8f0; }
 
-    .form-control { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; margin-bottom: 10px; }
-    
-    .btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; }
-    .btn-primary { background: #3182ce; color: white; }
-    .btn-success { background: #38a169; color: white; margin-top: 10px; }
-    .btn-primary:hover, .btn-success:hover { opacity: 0.9; }
+    .container { max-width: 900px; margin: 0 auto; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; text-align: left; font-size: 13px; border-bottom: 1px solid #edf2f7; }
-    th { background: #edf2f7; }
+    .header-card {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .header-card h1 { color: #8e2de2; font-size: 22px; font-weight: 700; }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+
+    .card h2 { font-size: 16px; color: #3182ce; margin-bottom: 12px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    /* Drag & Drop Areas */
+    .drag-box {
+      min-height: 140px;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e0;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .shift-target {
+      min-height: 120px;
+      background: #ebf8ff;
+      border: 2px dashed #63b3ed;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 5px;
+    }
+
+    .draggable-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: grab;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    .draggable-card:active { cursor: grabbing; background: #edf2f7; }
+
+    .badge {
+      background: #ebf8ff;
+      color: #3182ce;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-gradient {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-gradient:hover { opacity: 0.95; }
+
+    .btn-blue {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div class="header">
-      <h1>⚙️ Admin Panel - Kelola Jadwal Piket</h1>
+    <div class="header-card">
+      <h1>⚙️ Kelola Jadwal Piket UKS</h1>
+      <p style="font-size: 12px; color: #555;">Panel Admin Susun Shift & Terbitkan Jadwal</p>
     </div>
 
-    <div class="grid-container">
-      
-      <!-- KOLOM KIRI: INPUT MEMBER & LIST ANGGOTA (BISA DIDRAG) -->
-      <div>
-        <div class="card">
-          <h2>➕ Tambah Anggota Baru</h2>
-          <input type="text" id="nama-member" class="form-control" placeholder="Nama Lengkap">
-          <select id="fase-member" class="form-control">
+    <!-- TAMBAH ANGGOTA -->
+    <div class="card">
+      <h2>➕ Tambah Anggota PMR Baru</h2>
+      <div class="grid-2">
+        <input type="text" id="nama-baru" class="form-control" placeholder="Nama Lengkap Siswa" style="margin-bottom: 0;">
+        <div style="display: flex; gap: 8px;">
+          <select id="fase-baru" class="form-control" style="margin-bottom: 0; width: 40%;">
             <option value="E">Fase E</option>
             <option value="F">Fase F</option>
           </select>
-          <button type="button" class="btn btn-primary" onclick="tambahMember()">Tambah Anggota</button>
+          <button type="button" class="btn-gradient btn-blue" style="margin-top:0;" onclick="tambahAnggota()">Simpan</button>
         </div>
+      </div>
+    </div>
 
-        <div class="card">
-          <h2>📇 Daftar Anggota (Tarik ke Kanan)</h2>
-          <div id="drag-source" class="drag-list" ondrop="drop(event, 'source')" ondragover="allowDrop(event)">
+    <!-- DRAG AND DROP PANEL (2 SHIFT) -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2>📌 Susun Jadwal Piket</h2>
+        <select id="select-hari" class="form-control" style="width: auto; margin-bottom: 0;" onchange="loadJadwalHariIni()">
+          <option value="Senin">Senin</option>
+          <option value="Selasa">Selasa</option>
+          <option value="Rabu">Rabu</option>
+          <option value="Kamis">Kamis</option>
+          <option value="Jumat">Jumat</option>
+        </select>
+      </div>
+
+      <div class="grid-2">
+        <!-- LIST ANGGOTA (SOURCE) -->
+        <div>
+          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">📇 Daftar Anggota (Tarik nama ke Shift):</label>
+          <div id="source-list" class="drag-box" style="margin-top: 5px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)">
             <!-- List Anggota Muncul di Sini -->
           </div>
         </div>
-      </div>
 
-      <!-- KOLOM KANAN: PANEL SUSUN JADWAL & TOMBOL TERBITKAN -->
-      <div>
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h2>📌 Panel Susun Jadwal</h2>
-            <select id="select-hari" class="form-control" style="width: auto;" onchange="loadJadwalHari()">
-              <option value="Senin">Senin</option>
-              <option value="Selasa">Selasa</option>
-              <option value="Rabu">Rabu</option>
-              <option value="Kamis">Kamis</option>
-              <option value="Jumat">Jumat</option>
-            </select>
-          </div>
+        <!-- 2 KOTAK SHIFT (TARGET) -->
+        <div>
+          <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
+          <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
 
-          <p style="font-size: 12px; color: #718096; margin-bottom: 8px;">Tarik/Drag nama anggota dari sebelah kiri ke kotak di bawah ini:</p>
-          
-          <div id="drop-target" class="drop-zone" ondrop="drop(event, 'target')" ondragover="allowDrop(event)">
-            <!-- Item yang didrop masuk ke sini -->
-          </div>
-
-          <!-- TOMBOL TERBITKAN -->
-          <button type="button" class="btn btn-success" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
-          <div id="status-terbit" style="margin-top: 8px; font-size: 13px; font-weight: bold; text-align: center;"></div>
-        </div>
-
-        <!-- PREVIEW JADWAL AKTIF -->
-        <div class="card">
-          <h2>📋 Jadwal Terbit Saat Ini</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th>Fase</th>
-                <th>Shift</th>
-              </tr>
-            </thead>
-            <tbody id="tabel-preview">
-              <tr><td colspan="3">Memuat data...</td></tr>
-            </tbody>
-          </table>
+          <label style="font-size: 12px; font-weight: bold; color: #2b6cb0; margin-top: 10px; display: block;">⏰ Shift Istirahat 2:</label>
+          <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
         </div>
       </div>
 
+      <!-- TOMBOL TERBITKAN -->
+      <button type="button" class="btn-gradient" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
+      <div id="status-terbit" style="margin-top: 10px; font-size: 13px; font-weight: bold; text-align: center;"></div>
     </div>
+
   </div>
 
   <script>
@@ -123,192 +180,166 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allMembers = [];
+    let membersAll = [];
 
-    // 1. Inisialisasi Data
     async function init() {
       await loadMembers();
-      await loadJadwalHari();
+      await loadJadwalHariIni();
     }
 
-    // 2. Ambil Semua Anggota
+    // Load semua anggota dari Supabase
     async function loadMembers() {
-      const { data, error } = await supabase.from('members').select('*').order('nama');
-      if (error) { console.error(error); return; }
-      allMembers = data || [];
-      renderDragSource();
+      const { data } = await supabase.from('members').select('*').order('nama');
+      membersAll = data || [];
     }
 
-    // 3. Render List Anggota yang Belum Dimasukkan ke Jadwal
-    function renderDragSource() {
-      const sourceContainer = document.getElementById('drag-source');
-      sourceContainer.innerHTML = '';
+    // Render ulang list kiri (hanya anggota yang belum dimasukkan ke shift)
+    function renderSourceList() {
+      const sourceBox = document.getElementById('source-list');
+      sourceBox.innerHTML = '';
 
-      // Ambil ID member yang sudah ada di panel susun
-      const inTarget = Array.from(document.querySelectorAll('#drop-target .draggable-item')).map(el => el.dataset.id);
+      const selectedIds = Array.from(document.querySelectorAll('.shift-target .draggable-card')).map(el => el.dataset.id);
 
-      allMembers.forEach(m => {
-        if (!inTarget.includes(m.id.toString())) {
-          sourceContainer.appendChild(createItemElement(m.id, m.nama, m.fase));
+      membersAll.forEach(m => {
+        if (!selectedIds.includes(m.id.toString())) {
+          sourceBox.appendChild(createMemberCard(m.id, m.nama, m.fase));
         }
       });
     }
 
-    // 4. Buat Elemen Draggable
-    function createItemElement(id, nama, fase, shift = 'Shift Istirahat 1') {
+    // Buat Kartu Anggota
+    function createMemberCard(id, nama, fase) {
       const div = document.createElement('div');
-      div.className = 'draggable-item';
+      div.className = 'draggable-card';
       div.draggable = true;
       div.id = `member-${id}`;
       div.dataset.id = id;
-      div.dataset.nama = nama;
-      div.dataset.fase = fase;
 
       div.ondragstart = (e) => {
         e.dataTransfer.setData("text/plain", id);
       };
 
       div.innerHTML = `
-        <div>
-          <b>${nama}</b> <small style="color:#718096">(Fase ${fase})</small>
-        </div>
-        <select class="shift-select" style="font-size: 11px; padding: 2px;">
-          <option value="Shift Istirahat 1" ${shift === 'Shift Istirahat 1' ? 'selected' : ''}>Shift 1</option>
-          <option value="Shift Istirahat 2" ${shift === 'Shift Istirahat 2' ? 'selected' : ''}>Shift 2</option>
-        </select>
+        <span><b>${nama}</b></span>
+        <span class="badge">Fase ${fase}</span>
       `;
       return div;
     }
 
-    // 5. Fungsi Drag and Drop Handlers
+    // Drag & Drop Handlers
     function allowDrop(e) {
       e.preventDefault();
     }
 
-    function drop(e, zone) {
+    function drop(e, targetZone) {
       e.preventDefault();
-      const memberId = e.dataTransfer.getData("text/plain");
-      const draggedEl = document.getElementById(`member-${memberId}`);
+      const id = e.dataTransfer.getData("text/plain");
+      const card = document.getElementById(`member-${id}`);
 
-      if (!draggedEl) return;
+      if (!card) return;
 
-      if (zone === 'target') {
-        document.getElementById('drop-target').appendChild(draggedEl);
+      if (targetZone === 'Shift Istirahat 1') {
+        document.getElementById('target-shift-1').appendChild(card);
+      } else if (targetZone === 'Shift Istirahat 2') {
+        document.getElementById('target-shift-2').appendChild(card);
       } else {
-        document.getElementById('drag-source').appendChild(draggedEl);
+        document.getElementById('source-list').appendChild(card);
       }
     }
 
-    // 6. FUNGSI TERBITKAN JADWAL (SUDAH DIPERBAIKI PENUH)
+    // FUNGSI UTAMA: TERBITKAN JADWAL
     async function terbitkanJadwal() {
       const hari = document.getElementById('select-hari').value;
-      const statusEl = document.getElementById('status-terbit');
-      
-      statusEl.style.color = "#3182ce";
-      statusEl.innerText = "⏳ Menerbitkan jadwal...";
+      const status = document.getElementById('status-terbit');
 
-      const targetItems = document.querySelectorAll('#drop-target .draggable-item');
+      status.style.color = "#3182ce";
+      status.innerText = "⏳ Sedang menerbitkan...";
 
-      if (targetItems.length === 0) {
-        statusEl.style.color = "#e53e3e";
-        statusEl.innerText = "⚠️ Tarik minimal 1 anggota ke dalam panel susun!";
+      const shift1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
+      const shift2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
+
+      if (shift1Cards.length === 0 && shift2Cards.length === 0) {
+        status.style.color = "#e53e3e";
+        status.innerText = "⚠️ Geser minimal 1 anggota ke Shift 1 atau Shift 2!";
         return;
       }
 
-      // Susun Payload
-      const dataPayload = [];
-      targetItems.forEach(item => {
-        const id = item.dataset.id;
-        const shiftVal = item.querySelector('.shift-select').value;
+      // 1. Susun Payload Data
+      const payload = [];
 
-        dataPayload.push({
-          hari: hari,
-          member_id: id,
-          shift: shiftVal
-        });
+      shift1Cards.forEach(c => {
+        payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 1' });
       });
 
-      // A. Hapus jadwal lama untuk hari ini
-      const { error: delErr } = await supabase.from('piket_schedule').delete().eq('hari', hari);
-      if (delErr) {
-        console.error("Delete Error:", delErr);
-        statusEl.style.color = "#e53e3e";
-        statusEl.innerText = "❌ Gagal mengosongkan jadwal lama: " + delErr.message;
-        return;
-      }
-
-      // B. Masukkan data jadwal baru
-      const { error: insErr } = await supabase.from('piket_schedule').insert(dataPayload);
-
-      if (insErr) {
-        console.error("Insert Error:", insErr);
-        statusEl.style.color = "#e53e3e";
-        statusEl.innerText = "❌ Gagal terbit: " + insErr.message;
-      } else {
-        statusEl.style.color = "#38a169";
-        statusEl.innerText = "✅ Jadwal hari " + hari + " berhasil diterbitkan!";
-        loadJadwalHari(); // Update preview
-      }
-    }
-
-    // 7. Ambil Jadwal Hari Ini & Tampilkan Preview
-    async function loadJadwalHari() {
-      const hari = document.getElementById('select-hari').value;
-      const dropTarget = document.getElementById('drop-target');
-      const tbody = document.getElementById('tabel-preview');
-
-      dropTarget.innerHTML = '';
-      tbody.innerHTML = '<tr><td colspan="3">Memuat...</td></tr>';
-
-      // Ambil Jadwal Supabase
-      const { data: scheduleData } = await supabase.from('piket_schedule').select('*').eq('hari', hari);
-
-      if (!scheduleData || scheduleData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="color:#a0aec0;">Belum ada jadwal terbit untuk ${hari}</td></tr>`;
-        renderDragSource();
-        return;
-      }
-
-      tbody.innerHTML = '';
-
-      scheduleData.forEach(item => {
-        const member = allMembers.find(m => m.id.toString() === item.member_id.toString());
-        if (member) {
-          // Masukkan ke Panel Susun (Drop Target)
-          dropTarget.appendChild(createItemElement(member.id, member.nama, member.fase, item.shift));
-
-          // Masukkan ke Tabel Preview
-          tbody.innerHTML += `
-            <tr>
-              <td><b>${member.nama}</b></td>
-              <td>Fase ${member.fase}</td>
-              <td>${item.shift}</td>
-            </tr>
-          `;
-        }
+      shift2Cards.forEach(c => {
+        payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 2' });
       });
 
-      renderDragSource();
-    }
+      // 2. Hapus jadwal lama untuk hari ini di Supabase
+      await supabase.from('piket_schedule').delete().eq('hari', hari);
 
-    // 8. Tambah Anggota Baru ke Database
-    async function tambahMember() {
-      const nama = document.getElementById('nama-member').value.trim();
-      const fase = document.getElementById('fase-member').value;
-
-      if (!nama) { alert("Isi nama anggota!"); return; }
-
-      const { error } = await supabase.from('members').insert([{ nama, fase }]);
+      // 3. Masukkan jadwal baru
+      const { error } = await supabase.from('piket_schedule').insert(payload);
 
       if (error) {
-        alert("Gagal tambah anggota: " + error.message);
+        status.style.color = "#e53e3e";
+        status.innerText = "❌ Gagal Terbit: " + error.message;
       } else {
-        document.getElementById('nama-member').value = '';
-        await loadMembers();
+        status.style.color = "#38a169";
+        status.innerText = "✅ Jadwal " + hari + " Berhasil Diterbitkan!";
       }
     }
 
-    // Jalankan pertama kali
+    // Load jadwal berdasarkan hari terpilih
+    async function loadJadwalHariIni() {
+      const hari = document.getElementById('select-hari').value;
+      const s1 = document.getElementById('target-shift-1');
+      const s2 = document.getElementById('target-shift-2');
+      document.getElementById('status-terbit').innerText = '';
+
+      s1.innerHTML = '';
+      s2.innerHTML = '';
+
+      const { data } = await supabase.from('piket_schedule').select('*').eq('hari', hari);
+
+      if (data && data.length > 0) {
+        data.forEach(item => {
+          const member = membersAll.find(m => m.id.toString() === item.member_id.toString());
+          if (member) {
+            const card = createMemberCard(member.id, member.nama, member.fase);
+            if (item.shift === 'Shift Istirahat 1') {
+              s1.appendChild(card);
+            } else {
+              s2.appendChild(card);
+            }
+          }
+        });
+      }
+
+      renderSourceList();
+    }
+
+    // Tambah Anggota Baru
+    async function tambahAnggota() {
+      const nama = document.getElementById('nama-baru').value.trim();
+      const fase = document.getElementById('fase-baru').value;
+
+      if (!nama) return alert("Masukkan nama anggota!");
+
+      await supabase.from('members').insert([{ nama, fase }]);
+      document.getElementById('nama-baru').value = '';
+      
+      await loadMembers();
+      renderSourceList();
+    }
+
+    // Deteksi Hari Ini
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const today = days[new Date().getDay()];
+    if (document.querySelector(`#select-hari option[value="${today}"]`)) {
+      document.getElementById('select-hari').value = today;
+    }
+
     init();
   </script>
 </body>

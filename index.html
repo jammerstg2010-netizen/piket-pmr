@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absen Piket UKS - PMR</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    body {
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      min-height: 100vh;
+      padding: 20px 15px;
+      color: #2d3748;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .header-card {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+      padding: 25px 20px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .header-card h1 { color: #8e2de2; font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .header-card p { color: #555; font-size: 14px; }
+
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      margin-bottom: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .card h2 { font-size: 18px; color: #3182ce; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+
+    .table-responsive { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #edf2f7; color: #4a5568; padding: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 8px; }
+    td { padding: 12px; font-size: 14px; border-bottom: 1px solid #edf2f7; }
+
+    .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .badge-fase { background: #ebf8ff; color: #3182ce; border: 1px solid #bee3f8; }
+    .status-belum { background: #fff5f5; color: #e53e3e; border: 1px solid #fed7d7; }
+    .status-menunggu { background: #fffaf0; color: #dd6b20; border: 1px solid #feebc8; }
+    .status-sudah { background: #f0fff4; color: #38a169; border: 1px solid #c6f6d5; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4a5568; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 14px; background: white; outline: none; transition: 0.2s; }
+    .form-control:focus { border-color: #3182ce; box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15); }
+
+    .btn-gradient {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 126, 95, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 126, 95, 0.4); }
+
+    #pesan-status { margin-top: 12px; text-align: center; font-size: 13px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- HEADER CARD -->
+    <div class="header-card">
+      <h1>🏥 Piket UKS PMR</h1>
+      <p>Jadwal Pertugasan & Absensi Harian</p>
+    </div>
+
+    <!-- TABEL JADWAL -->
+    <div class="card">
+      <h2>📅 Status Piket Hari Ini</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Fase</th>
+              <th>Shift</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tabel-piket">
+            <tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal piket...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- UPLOAD FORM -->
+    <div class="card">
+      <h2>📸 Absen & Upload Bukti Piket</h2>
+      <form id="form-upload">
+        <div class="form-group">
+          <label>Nama Anggota:</label>
+          <select id="select-member" class="form-control" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Shift Istirahat:</label>
+          <select id="select-shift" class="form-control" required>
+            <option value="Istirahat 1">Shift Istirahat 1</option>
+            <option value="Istirahat 2">Shift Istirahat 2</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Foto Bukti Piket:</label>
+          <input type="file" id="input-foto" class="form-control" accept="image/*" required>
+        </div>
+
+        <button type="submit" class="btn-gradient">Kirim Laporan Piket</button>
+      </form>
+      <div id="pesan-status"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadMembers() {
+      const { data } = await supabase.from('members').select('*').order('nama', { ascending: true });
+      const select = document.getElementById('select-member');
+      select.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
+      if(data) {
+        data.forEach(m => {
+          select.innerHTML += `<option value="${m.id}">${m.nama} (Fase ${m.fase})</option>`;
+        });
+      }
+    }
+
+    document.getElementById('form-upload').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusPesan = document.getElementById('pesan-status');
+      statusPesan.style.color = "#3182ce";
+      statusPesan.innerText = "⏳ Sedang mengunggah bukti foto...";
+
+      const memberId = document.getElementById('select-member').value;
+      const shift = document.getElementById('select-shift').value;
+      const file = document.getElementById('input-foto').files[0];
+
+      const fileName = `${Date.now()}_${file.name}`;
+      const { uploadErr } = await supabase.storage.from('bukti-piket').upload(fileName, file);
+
+      if (uploadErr) {
+        statusPesan.style.color = "#e53e3e";
+        statusPesan.innerText = "❌ Gagal mengunggah foto. Pastikan bucket 'bukti-piket' sudah dibuat di Supabase.";
+        return;
+      }
+
+      const fotoUrl = `${SUPABASE_URL}/storage/v1/object/public/bukti-piket/${fileName}`;
+
+      await supabase.from('piket_logs').insert([{
+        member_id: memberId,
+        shift: shift,
+        foto_url: fotoUrl,
+        status: 'Menunggu Tanggapan Admin'
+      }]);
+
+      statusPesan.style.color = "#38a169";
+      statusPesan.innerText = "✅ Absen berhasil terkirim! Menunggu konfirmasi Admin.";
+      document.getElementById('form-upload').reset();
+    });
+
+    loadMembers();
+  </script>
+</body>
+</html>

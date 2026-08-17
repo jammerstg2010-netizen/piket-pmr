@@ -50,7 +50,6 @@
     .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
     .badge-fase { background: #ebf8ff; color: #3182ce; }
     .status-belum { background: #fff5f5; color: #e53e3e; }
-    .status-sudah { background: #f0fff4; color: #38a169; }
 
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #4a5568; }
@@ -101,7 +100,7 @@
             </tr>
           </thead>
           <tbody id="tabel-piket">
-            <tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat data...</td></tr>
+            <tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>
           </tbody>
         </table>
       </div>
@@ -150,37 +149,42 @@
       tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
-      // Ambil Jadwal Piket sesuai hari
-      const { data, error } = await supabase
+      // 1. Ambil data semua member
+      const { data: membersData } = await supabase.from('members').select('*');
+      
+      // Map member berdasarkan ID
+      const memberMap = {};
+      if(membersData) {
+        membersData.forEach(m => { memberMap[m.id] = m; });
+      }
+
+      // 2. Ambil data jadwal piket
+      const { data: scheduleData, error } = await supabase
         .from('piket_schedule')
-        .select(`
-          member_id,
-          shift,
-          members ( id, nama, fase )
-        `)
+        .select('*')
         .eq('hari', hari);
 
-      if (error || !data || data.length === 0) {
+      if (error || !scheduleData || scheduleData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Belum ada jadwal piket untuk hari ' + hari + '</td></tr>';
         return;
       }
 
       tbody.innerHTML = '';
 
-      // Tampilkan ke Tabel dan Dropdown Absen
-      data.forEach(item => {
-        if (item.members) {
+      // 3. Tampilkan data ke tabel & dropdown
+      scheduleData.forEach(item => {
+        const member = memberMap[item.member_id];
+        if (member) {
           tbody.innerHTML += `
             <tr>
-              <td><b>${item.members.nama}</b></td>
-              <td><span class="badge badge-fase">Fase ${item.members.fase}</span></td>
+              <td><b>${member.nama}</b></td>
+              <td><span class="badge badge-fase">Fase ${member.fase}</span></td>
               <td>${item.shift}</td>
               <td><span class="badge status-belum">Belum Piket</span></td>
             </tr>
           `;
 
-          // Masukkan ke Dropdown Absen
-          selectMember.innerHTML += `<option value="${item.members.id}">${item.members.nama} (${item.shift})</option>`;
+          selectMember.innerHTML += `<option value="${member.id}">${member.nama} (${item.shift})</option>`;
         }
       });
     }
@@ -207,7 +211,7 @@
 
       if (uploadErr) {
         statusPesan.style.color = "#e53e3e";
-        statusPesan.innerText = "❌ Gagal upload foto. Pastikan bucket 'bukti-piket' sudah diset ke Public di Supabase!";
+        statusPesan.innerText = "❌ Gagal upload foto. Pastikan bucket 'bukti-piket' di Supabase sudah Public!";
         return;
       }
 
@@ -225,14 +229,13 @@
       document.getElementById('form-upload').reset();
     });
 
-    // Deteksi Hari Ini Secara Otomatis
+    // Deteksi Hari Ini
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     if (document.querySelector(`#filter-hari option[value="${today}"]`)) {
       document.getElementById('filter-hari').value = today;
     }
 
-    // Jalankan pertama kali saat halaman dibuka
     loadScheduleSiswa();
   </script>
 </body>

@@ -52,9 +52,9 @@
       margin-bottom: 10px;
     }
 
-    /* Drag & Drop Areas */
+    /* Area Drag and Drop */
     .drag-box {
-      min-height: 140px;
+      min-height: 150px;
       background: #f8fafc;
       border: 2px dashed #cbd5e0;
       border-radius: 10px;
@@ -62,7 +62,7 @@
     }
 
     .shift-target {
-      min-height: 120px;
+      min-height: 100px;
       background: #ebf8ff;
       border: 2px dashed #63b3ed;
       border-radius: 10px;
@@ -104,12 +104,19 @@
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 15px;
     }
     .btn-gradient:hover { opacity: 0.95; }
 
     .btn-blue {
       background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    }
+
+    .notice-jumat {
+      font-size: 11px;
+      color: #e53e3e;
+      font-weight: bold;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -121,7 +128,7 @@
       <p style="font-size: 12px; color: #555;">Panel Admin Susun Shift & Terbitkan Jadwal</p>
     </div>
 
-    <!-- TAMBAH ANGGOTA -->
+    <!-- TAMBAH ANGGOTA BARU -->
     <div class="card">
       <h2>➕ Tambah Anggota PMR Baru</h2>
       <div class="grid-2">
@@ -136,7 +143,7 @@
       </div>
     </div>
 
-    <!-- DRAG AND DROP PANEL (2 SHIFT) -->
+    <!-- PANEL SUSUN JADWAL (DRAG & DROP) -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h2>📌 Susun Jadwal Piket</h2>
@@ -150,21 +157,25 @@
       </div>
 
       <div class="grid-2">
-        <!-- LIST ANGGOTA (SOURCE) -->
+        <!-- LIST ANGGOTA (KIRI) -->
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">📇 Daftar Anggota (Tarik nama ke Shift):</label>
+          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">📇 Daftar Anggota (Geser ke Shift):</label>
           <div id="source-list" class="drag-box" style="margin-top: 5px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)">
-            <!-- List Anggota Muncul di Sini -->
+            <!-- List nama anggota -->
           </div>
         </div>
 
-        <!-- 2 KOTAK SHIFT (TARGET) -->
+        <!-- AREA SHIFT (KANAN) -->
         <div>
           <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
           <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
 
-          <label style="font-size: 12px; font-weight: bold; color: #2b6cb0; margin-top: 10px; display: block;">⏰ Shift Istirahat 2:</label>
-          <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
+          <!-- SHIFT 2 (OTOMATIS HILANG DI HARI JUMAT) -->
+          <div id="container-shift-2" style="margin-top: 10px;">
+            <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
+            <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
+          </div>
+          <div id="notice-jumat" class="notice-jumat" style="display: none;">⚠️ Hari Jumat hanya ada Shift Istirahat 1.</div>
         </div>
       </div>
 
@@ -187,18 +198,20 @@
       await loadJadwalHariIni();
     }
 
-    // Load semua anggota dari Supabase
+    // 1. Ambil data semua anggota PMR
     async function loadMembers() {
-      const { data } = await supabase.from('members').select('*').order('nama');
+      const { data, error } = await supabase.from('members').select('*').order('nama');
+      if (error) console.error("Error load members:", error);
       membersAll = data || [];
     }
 
-    // Render ulang list kiri (hanya anggota yang belum dimasukkan ke shift)
+    // 2. Render daftar nama di sebelah kiri (yang belum masuk shift)
     function renderSourceList() {
       const sourceBox = document.getElementById('source-list');
       sourceBox.innerHTML = '';
 
-      const selectedIds = Array.from(document.querySelectorAll('.shift-target .draggable-card')).map(el => el.dataset.id);
+      const selectedCards = Array.from(document.querySelectorAll('.shift-target .draggable-card'));
+      const selectedIds = selectedCards.map(el => el.dataset.id);
 
       membersAll.forEach(m => {
         if (!selectedIds.includes(m.id.toString())) {
@@ -207,7 +220,7 @@
       });
     }
 
-    // Buat Kartu Anggota
+    // 3. Buat Kartu Anggota Draggable
     function createMemberCard(id, nama, fase) {
       const div = document.createElement('div');
       div.className = 'draggable-card';
@@ -226,17 +239,24 @@
       return div;
     }
 
-    // Drag & Drop Handlers
+    // 4. Handlers Drag and Drop
     function allowDrop(e) {
       e.preventDefault();
     }
 
     function drop(e, targetZone) {
       e.preventDefault();
+      const hari = document.getElementById('select-hari').value;
       const id = e.dataTransfer.getData("text/plain");
       const card = document.getElementById(`member-${id}`);
 
       if (!card) return;
+
+      // Jika Jumat, tidak boleh lepas ke Shift 2
+      if (hari === 'Jumat' && targetZone === 'Shift Istirahat 2') {
+        alert("Hari Jumat tidak ada Shift Istirahat 2!");
+        return;
+      }
 
       if (targetZone === 'Shift Istirahat 1') {
         document.getElementById('target-shift-1').appendChild(card);
@@ -247,59 +267,78 @@
       }
     }
 
-    // FUNGSI UTAMA: TERBITKAN JADWAL
+    // 5. FUNGSI TERBITKAN JADWAL
     async function terbitkanJadwal() {
       const hari = document.getElementById('select-hari').value;
       const status = document.getElementById('status-terbit');
 
       status.style.color = "#3182ce";
-      status.innerText = "⏳ Sedang menerbitkan...";
+      status.innerText = "⏳ Sedang menerbitkan jadwal...";
 
       const shift1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
       const shift2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
 
-      if (shift1Cards.length === 0 && shift2Cards.length === 0) {
+      if (shift1Cards.length === 0 && (hari === 'Jumat' || shift2Cards.length === 0)) {
         status.style.color = "#e53e3e";
-        status.innerText = "⚠️ Geser minimal 1 anggota ke Shift 1 atau Shift 2!";
+        status.innerText = "⚠️ Geser minimal 1 anggota ke dalam kotak shift!";
         return;
       }
 
-      // 1. Susun Payload Data
+      // Susun Payload
       const payload = [];
 
       shift1Cards.forEach(c => {
         payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 1' });
       });
 
-      shift2Cards.forEach(c => {
-        payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 2' });
-      });
+      if (hari !== 'Jumat') {
+        shift2Cards.forEach(c => {
+          payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 2' });
+        });
+      }
 
-      // 2. Hapus jadwal lama untuk hari ini di Supabase
-      await supabase.from('piket_schedule').delete().eq('hari', hari);
-
-      // 3. Masukkan jadwal baru
-      const { error } = await supabase.from('piket_schedule').insert(payload);
-
-      if (error) {
+      // Hapus Jadwal Lama
+      const { error: delErr } = await supabase.from('piket_schedule').delete().eq('hari', hari);
+      if (delErr) {
         status.style.color = "#e53e3e";
-        status.innerText = "❌ Gagal Terbit: " + error.message;
+        status.innerText = "❌ Gagal mengosongkan jadwal lama: " + delErr.message;
+        return;
+      }
+
+      // Insert Jadwal Baru
+      const { error: insErr } = await supabase.from('piket_schedule').insert(payload);
+
+      if (insErr) {
+        status.style.color = "#e53e3e";
+        status.innerText = "❌ Gagal terbit: " + insErr.message;
       } else {
         status.style.color = "#38a169";
-        status.innerText = "✅ Jadwal " + hari + " Berhasil Diterbitkan!";
+        status.innerText = "✅ Jadwal hari " + hari + " berhasil diterbitkan!";
       }
     }
 
-    // Load jadwal berdasarkan hari terpilih
+    // 6. Cek Hari dan Load Jadwal
     async function loadJadwalHariIni() {
       const hari = document.getElementById('select-hari').value;
       const s1 = document.getElementById('target-shift-1');
       const s2 = document.getElementById('target-shift-2');
-      document.getElementById('status-terbit').innerText = '';
+      const shift2Container = document.getElementById('container-shift-2');
+      const noticeJumat = document.getElementById('notice-jumat');
 
+      document.getElementById('status-terbit').innerText = '';
       s1.innerHTML = '';
       s2.innerHTML = '';
 
+      // Pengaturan khusus hari Jumat
+      if (hari === 'Jumat') {
+        shift2Container.style.display = 'none';
+        noticeJumat.style.display = 'block';
+      } else {
+        shift2Container.style.display = 'block';
+        noticeJumat.style.display = 'none';
+      }
+
+      // Load data dari Supabase
       const { data } = await supabase.from('piket_schedule').select('*').eq('hari', hari);
 
       if (data && data.length > 0) {
@@ -309,7 +348,7 @@
             const card = createMemberCard(member.id, member.nama, member.fase);
             if (item.shift === 'Shift Istirahat 1') {
               s1.appendChild(card);
-            } else {
+            } else if (item.shift === 'Shift Istirahat 2' && hari !== 'Jumat') {
               s2.appendChild(card);
             }
           }
@@ -319,18 +358,22 @@
       renderSourceList();
     }
 
-    // Tambah Anggota Baru
+    // 7. Tambah Anggota
     async function tambahAnggota() {
       const nama = document.getElementById('nama-baru').value.trim();
       const fase = document.getElementById('fase-baru').value;
 
       if (!nama) return alert("Masukkan nama anggota!");
 
-      await supabase.from('members').insert([{ nama, fase }]);
-      document.getElementById('nama-baru').value = '';
-      
-      await loadMembers();
-      renderSourceList();
+      const { error } = await supabase.from('members').insert([{ nama, fase }]);
+
+      if (error) {
+        alert("Gagal menambah: " + error.message);
+      } else {
+        document.getElementById('nama-baru').value = '';
+        await loadMembers();
+        renderSourceList();
+      }
     }
 
     // Deteksi Hari Ini

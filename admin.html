@@ -226,22 +226,17 @@
       <div id="status-terbit" style="margin-top: 10px; font-size: 13px; text-align: center; font-weight: bold;"></div>
     </div>
 
-    <!-- FITUR BARU: REKAP PIKET UNTUK KIRIM KE WA -->
+    <!-- FITUR REKAP PIKET UNTUK KIRIM KE WA -->
     <div class="card" style="border: 2px solid #3182ce;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="font-size:15px; color:#2b6cb0;">📱 Rekap Piket untuk WhatsApp (Real-time)</h3>
+        <h3 style="font-size:15px; color:#2b6cb0;">📱 Rekap Piket untuk WhatsApp (Otomatis & Real-time)</h3>
         <button class="btn-refresh" onclick="generateRekapWA()">🔄 Refresh Rekap</button>
       </div>
-      <p style="font-size: 12px; color: #718096; margin-bottom: 10px;">Centang nama siswa di bawah ini yang sudah melakukan absensi/piket, lalu salin teks otomatis untuk dikirim kegrup WhatsApp.</p>
+      <p style="font-size: 12px; color: #718096; margin-bottom: 10px;">Status keaktifan dan kehadiran ditarik otomatis dari tabel absensi dan durasi shift saat ini.</p>
       
-      <div id="container-checklist-rekap" style="background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 12px; max-height: 200px; overflow-y: auto;">
-        <!-- Checkbox list generated via JS -->
-        <span style="font-size: 13px; color: #a0aec0;">Pilih hari di atas atau muat jadwal terlebih dahulu.</span>
-      </div>
-
       <div style="margin-bottom: 10px;">
         <label style="font-size: 11px; font-weight: bold; color: #4a5568;">Preview Teks WA:</label>
-        <textarea id="preview-text-wa" class="form-control" rows="6" style="font-family: monospace; font-size: 12px; margin-top: 4px;" readonly></textarea>
+        <textarea id="preview-text-wa" class="form-control" rows="8" style="font-family: monospace; font-size: 12px; margin-top: 4px;" readonly></textarea>
       </div>
 
       <button type="button" class="btn btn-wa" onclick="salinTeksWA()">📋 Salin Teks untuk WhatsApp</button>
@@ -298,6 +293,7 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     
     let db, membersAll = [];
+    let latestLogsCache = [];
 
     async function initApp() {
       try {
@@ -307,7 +303,6 @@
           await loadMembers();
           await loadJadwalHariIni();
           await loadLogsAdmin();
-          generateRekapWA();
         }
       } catch (err) {
         console.error("Gagal load Supabase:", err);
@@ -502,15 +497,16 @@
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#a0aec0;">Memuat data foto...</td></tr>';
       
       const { data: logs } = await db.from('piket_logs').select('*').order('id', { ascending: false });
+      latestLogsCache = logs || [];
 
-      if (!logs || logs.length === 0) {
+      if (!latestLogsCache.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada laporan foto.</td></tr>';
         generateRekapWA();
         return;
       }
 
       tbody.innerHTML = '';
-      logs.forEach(log => {
+      latestLogsCache.forEach(log => {
         const member = membersAll.find(m => m.id.toString() === log.member_id.toString());
         const nama = member ? member.nama : 'Anggota PMR';
         const waktu = new Date(log.created_at || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -552,79 +548,77 @@
       }
     }
 
-    // --- FUNGSI REKAP WHATSAPP DENGAN CHECKBOX ---
+    // --- GENERATE REKAP OTOMATIS BERDASARKAN WAKTU & TABEL ---
     async function generateRekapWA() {
       const hari = document.getElementById('select-hari').value;
       const s1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
       const s2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
-      const containerChecklist = document.getElementById('container-checklist-rekap');
 
-      let htmlContent = '';
       let allAssigned = [];
-
       s1Cards.forEach(c => {
         const id = c.dataset.id;
         const nameNode = c.querySelector('b');
-        const nama = nameNode ? nameNode.innerText : 'Siswa';
-        allAssigned.push({ id, nama, shift: 'Shift Istirahat 1' });
+        allAssigned.push({ id, nama: nameNode ? nameNode.innerText : 'Siswa', shift: 'Shift Istirahat 1' });
       });
-
       s2Cards.forEach(c => {
         const id = c.dataset.id;
         const nameNode = c.querySelector('b');
-        const nama = nameNode ? nameNode.innerText : 'Siswa';
-        allAssigned.push({ id, nama, shift: 'Shift Istirahat 2' });
+        allAssigned.push({ id, nama: nameNode ? nameNode.innerText : 'Siswa', shift: 'Shift Istirahat 2' });
       });
 
+      // Format Tanggal Hari Ini (Contoh: Kamis, 20 Agustus 2026)
+      const optionsTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const tanggalHariIni = new Date().toLocaleDateString('id-ID', optionsTanggal);
+
+      // Cek Waktu Sekarang untuk Status Shift 2
+      const now = new Date();
+      const jamSekarang = now.getHours() * 60 + now.getMinutes(); // dalam satuan menit dari pukul 00:00
+      
+      // Ambil batas jam Expired Shift 1 dari input config untuk acuan otomatis waktu istirahat 1 selesai
+      const expS1Str = document.getElementById('input-exp-s1').value || "09:50";
+      const [expH, expM] = expS1Str.split(':').map(Number);
+      const batasMenitShift1 = expH * 60 + expM; 
+      
+      const shift2BelumMulai = jamSekarang < batasMenitShift1;
+
+      let text = `📋 *LAPORAN & REKAP PIKET UKS PMR*\n`;
+      text += `📅 Hari/Tanggal: ${hari}, ${tanggalHariIni}\n`;
+      text += `------------------------------------\n\n`;
+
       if (allAssigned.length === 0) {
-        containerChecklist.innerHTML = '<span style="font-size: 13px; color: #a0aec0;">Belum ada anggota yang dijadwalkan pada shift hari ini. Terbitkan jadwal terlebih dahulu.</span>';
-        document.getElementById('preview-text-wa').value = `📊 *REKAP PIKET UKS PMR*\nHari: ${hari}\n\nBelum ada petugas terjadwal.`;
+        text += `Belum ada petugas yang dijadwalkan pada hari ini.`;
+        document.getElementById('preview-text-wa').value = text;
         return;
       }
 
-      // Ambil data log/absensi real-time dari database untuk otomatis mencentang yang sudah ACC/kirim foto
-      const { data: logs } = await db.from('piket_logs').select('*');
-      const checkedMemberIds = new Set();
-      if (logs) {
-        logs.forEach(l => {
-          if (l.status === 'ACC') {
-            checkedMemberIds.add(l.member_id.toString());
-          }
-        });
-      }
-
-      htmlContent = `<div style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #2b6cb0;">Daftar Petugas Piket (${hari}):</div>`;
       allAssigned.forEach((item, index) => {
-        const isChecked = checkedMemberIds.has(item.id.toString()) ? 'checked' : '';
-        htmlContent += `
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <input type="checkbox" id="chk-member-${item.id}" value="${item.nama}" data-shift="${item.shift}" ${isChecked} onchange="updatePreviewWA()" style="width: 16px; height: 16px; cursor: pointer;">
-            <label for="chk-member-${item.id}" style="font-size: 13px; cursor: pointer;"><b>${index + 1}. ${item.nama}</b> <span style="color: #718096; font-size: 11px;">(${item.shift})</span></label>
-          </div>
-        `;
+        // Cari status log di cache database (tabel validasi foto)
+        const logData = latestLogsCache.find(l => l.member_id.toString() === item.id.toString() && l.shift === item.shift);
+        
+        let statusText = "";
+        
+        if (logData) {
+          if (logData.status === 'ACC') {
+            statusText = "✅ Hadir (Absen di-ACC)";
+          } else if (logData.status === 'Ditolak') {
+            statusText = "❌ Absen Ditolak (Harap Kirim Ulang)";
+          } else {
+            statusText = "⏳ Menunggu Validasi Admin";
+          }
+        } else {
+          // Jika belum ada log foto dikirim
+          if (item.shift === 'Shift Istirahat 2' && shift2BelumMulai) {
+            statusText = "⏳ Menunggu durasi Istirahat 2 dimulai";
+          } else {
+            statusText = "❌ Belum absen / Alpha";
+          }
+        }
+
+        text += `${index + 1}. *${item.nama}* (${item.shift})\n   Status: ${statusText}\n\n`;
       });
 
-      containerChecklist.innerHTML = htmlContent;
-      updatePreviewWA();
-    }
-
-    function updatePreviewWA() {
-      const hari = document.getElementById('select-hari').value;
-      const checkboxes = document.querySelectorAll('#container-checklist-rekap input[type="checkbox"]');
-      
-      let text = `📋 *LAPORAN & REKAP PIKET UKS PMR*\n`;
-      text += `📅 Hari/Tanggal: ${hari}\n`;
-      text += `------------------------------------\n\n`;
-      text += `*Status Kehadiran Petugas Piket:*\n`;
-
-      checkboxes.forEach((chk, idx) => {
-        const nama = chk.value;
-        const statusIcon = chk.checked ? '✅ Hadir / Piket' : '❌ Belum / Alpha';
-        text += `${idx + 1}. ${nama} — ${statusIcon}\n`;
-      });
-
-      text += `\n------------------------------------\n`;
-      text += `_Pesan ini digenerate secara otomatis oleh Panel Admin Piket UKS PMR._`;
+      text += `------------------------------------\n`;
+      text += `_Pesan otomatis dikirim melalui Panel Admin Piket UKS PMR._`;
 
       document.getElementById('preview-text-wa').value = text;
     }
@@ -632,12 +626,12 @@
     function salinTeksWA() {
       const textarea = document.getElementById('preview-text-wa');
       textarea.select();
-      textarea.setSelectionRange(0, 99999); // Untuk perangkat mobile
+      textarea.setSelectionRange(0, 99999);
       
       navigator.clipboard.writeText(textarea.value).then(() => {
         const status = document.getElementById('status-copy');
         status.style.color = "#38a169";
-        status.innerText = "✅ Teks rekap berhasil disalin ke clipboard! Silakan paste di WhatsApp.";
+        status.innerText = "✅ Teks rekap berhasil disalin! Silakan paste di grup WhatsApp.";
         setTimeout(() => { status.innerText = ""; }, 4000);
       }).catch(err => {
         alert("Gagal menyalin teks.");

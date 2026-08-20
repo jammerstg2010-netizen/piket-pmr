@@ -8,91 +8,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    
-    body {
-      background: #f4f7f6;
-      background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
-      background-size: 20px 20px;
-      min-height: 100vh;
-      padding: 16px;
-      color: #2d3748;
-    }
-
+    body { background: #f4f7f6; background-image: radial-gradient(#cbd5e0 1px, transparent 1px); background-size: 20px 20px; min-height: 100vh; padding: 16px; color: #2d3748; }
     .container { max-width: 700px; margin: 0 auto; }
-
-    .header-card {
-      background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
-      padding: 20px;
-      border-radius: 18px;
-      text-align: center;
-      color: white;
-      box-shadow: 0 10px 20px rgba(229, 62, 62, 0.2);
-      margin-bottom: 20px;
-    }
+    .header-card { background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%); padding: 20px; border-radius: 18px; text-align: center; color: white; box-shadow: 0 10px 20px rgba(229, 62, 62, 0.2); margin-bottom: 20px; }
     .header-card h1 { font-size: 22px; font-weight: 800; }
     .header-card p { font-size: 12px; opacity: 0.9; }
-
-    .card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-      border: 1px solid #edf2f7;
-      margin-bottom: 20px;
-    }
-
+    .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7; margin-bottom: 20px; }
     .card h2 { font-size: 15px; color: #2b6cb0; margin-bottom: 12px; font-weight: 700; }
-
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { background: #f7fafc; color: #718096; padding: 10px; font-size: 11px; text-transform: uppercase; }
     td { padding: 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; }
-
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
     .badge-fase { background: #ebf8ff; color: #2b6cb0; }
     .status-belum { background: #fff5f5; color: #e53e3e; }
     .status-acc { background: #c6f6d5; color: #22543d; }
     .status-pending { background: #feebc8; color: #c05621; }
-
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #4a5568; }
     .form-control { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; outline: none; }
     .form-control:focus { border-color: #3182ce; }
-
-    .preview-box {
-      width: 100%;
-      max-height: 180px;
-      border-radius: 10px;
-      object-fit: cover;
-      margin-top: 8px;
-      display: none;
-      border: 1px solid #cbd5e0;
-    }
-
-    .btn-submit {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
-      color: white;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-    }
+    .preview-box { width: 100%; max-height: 180px; border-radius: 10px; object-fit: cover; margin-top: 8px; display: none; border: 1px solid #cbd5e0; }
+    .btn-submit { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%); color: white; font-weight: 700; font-size: 14px; cursor: pointer; }
     .btn-submit:disabled { background: #cbd5e0; cursor: not-allowed; }
-
-    .expired-banner {
-      background: #fff5f5;
-      border: 1px solid #feb2b2;
-      color: #c53030;
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      text-align: center;
-      font-weight: bold;
-      margin-bottom: 12px;
-    }
+    .expired-banner { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; font-weight: bold; margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -113,6 +52,8 @@
           <option value="Rabu">Rabu</option>
           <option value="Kamis">Kamis</option>
           <option value="Jumat">Jumat</option>
+          <option value="Sabtu">Sabtu</option>
+          <option value="Minggu">Minggu</option>
         </select>
       </div>
 
@@ -174,7 +115,6 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // BUCKET DISESUAIKAN SAMA ADMIN
     const BUCKET_NAME = "piket-buktifoto"; 
 
     let currentSchedule = [];
@@ -204,49 +144,61 @@
       tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
-      const { data: logs } = await supabase.from('piket_logs').select('*');
-      const logMap = {};
-      if (logs) logs.forEach(l => { logMap[l.member_id] = l.status; });
-
-      const { data: scheduleData } = await supabase
-        .from('piket_schedule')
-        .select('*, members(id, nama, fase)')
-        .eq('hari', hari);
-
-      if (!scheduleData || scheduleData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Belum ada jadwal piket hari ${hari}</td></tr>`;
-        return;
-      }
-
-      currentSchedule = scheduleData;
-      tbody.innerHTML = '';
-
-      scheduleData.forEach(item => {
-        if (item.members) {
-          const m = item.members;
-          const statusLog = logMap[m.id];
-          let statusBadge = '<span class="badge status-belum">Belum Piket</span>';
-
-          if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending">Menunggu ACC</span>';
-          if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc">Sudah ACC</span>';
-
-          tbody.innerHTML += `
-            <tr>
-              <td><b>${m.nama}</b></td>
-              <td><span class="badge badge-fase">Fase ${m.fase}</span></td>
-              <td>${item.shift}</td>
-              <td>${statusBadge}</td>
-            </tr>
-          `;
-
-          selectMember.innerHTML += `<option value="${m.id}">${m.nama}</option>`;
+      try {
+        // Fetch log status (Aman dari error null)
+        const { data: logs } = await supabase.from('piket_logs').select('*');
+        const logMap = {};
+        if (logs && Array.isArray(logs)) {
+          logs.forEach(l => { if(l.member_id) logMap[l.member_id] = l.status; });
         }
-      });
+
+        // Fetch jadwal piket
+        const { data: scheduleData, error: schedErr } = await supabase
+          .from('piket_schedule')
+          .select('*, members(id, nama, fase)')
+          .eq('hari', hari);
+
+        if (schedErr) throw schedErr;
+
+        if (!scheduleData || scheduleData.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Belum ada jadwal piket hari ${hari}</td></tr>`;
+          return;
+        }
+
+        currentSchedule = scheduleData;
+        tbody.innerHTML = '';
+
+        scheduleData.forEach(item => {
+          if (item.members) {
+            const m = item.members;
+            const statusLog = logMap[m.id];
+            let statusBadge = '<span class="badge status-belum">Belum Piket</span>';
+
+            if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending">Menunggu ACC</span>';
+            if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc">Sudah ACC</span>';
+
+            tbody.innerHTML += `
+              <tr>
+                <td><b>${m.nama}</b></td>
+                <td><span class="badge badge-fase">Fase ${m.fase}</span></td>
+                <td>${item.shift}</td>
+                <td>${statusBadge}</td>
+              </tr>
+            `;
+
+            selectMember.innerHTML += `<option value="${m.id}">${m.nama}</option>`;
+          }
+        });
+
+      } catch (err) {
+        console.error("Error memuat jadwal:", err);
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #e53e3e;">Gagal mengambil data dari Supabase. Cek Console (F12).</td></tr>`;
+      }
     }
 
     function autoFillShift() {
       const memberId = document.getElementById('select-member').value;
-      const target = currentSchedule.find(s => s.member_id.toString() === memberId.toString());
+      const target = currentSchedule.find(s => s.member_id && s.member_id.toString() === memberId.toString());
       if (target) {
         document.getElementById('select-shift').value = target.shift;
       }
@@ -255,7 +207,8 @@
     document.getElementById('form-upload').addEventListener('submit', async (e) => {
       e.preventDefault();
       const statusPesan = document.getElementById('pesan-status');
-      statusPesan.style.color = "#3182ce"; statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
+      statusPesan.style.color = "#3182ce"; 
+      statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
 
       const memberId = document.getElementById('select-member').value;
       const shift = document.getElementById('select-shift').value;
@@ -269,7 +222,6 @@
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${memberId}.${fileExt}`;
 
-      // 1. Upload ke Storage Bucket
       const { error: uploadErr } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file);
 
       if (uploadErr) {
@@ -279,11 +231,9 @@
         return;
       }
 
-      // 2. Ambil Link Foto Public
       const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
       const fotoUrl = urlData.publicUrl;
 
-      // 3. Simpan ke database piket_logs
       await supabase.from('piket_logs').insert([{
         member_id: memberId,
         shift: shift,
@@ -298,14 +248,10 @@
       loadScheduleSiswa();
     });
 
-    // AUTO DETEKSI HARI INI
+    // SET DROPDOWN KE HARI INI
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
-    if (document.querySelector(`#filter-hari option[value="${today}"]`)) {
-      document.getElementById('filter-hari').value = today;
-    } else {
-      document.getElementById('filter-hari').value = 'Senin'; // Default Senin jika Sabtu/Minggu
-    }
+    document.getElementById('filter-hari').value = today;
 
     checkExpired();
     loadScheduleSiswa();

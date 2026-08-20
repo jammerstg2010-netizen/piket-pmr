@@ -236,7 +236,7 @@
       
       <div style="margin-bottom: 10px;">
         <label style="font-size: 11px; font-weight: bold; color: #4a5568;">Preview Teks WA:</label>
-        <textarea id="preview-text-wa" class="form-control" rows="8" style="font-family: monospace; font-size: 12px; margin-top: 4px;" readonly></textarea>
+        <textarea id="preview-text-wa" class="form-control" rows="10" style="font-family: monospace; font-size: 12px; margin-top: 4px;" readonly></textarea>
       </div>
 
       <button type="button" class="btn btn-wa" onclick="salinTeksWA()">📋 Salin Teks untuk WhatsApp</button>
@@ -548,77 +548,70 @@
       }
     }
 
-    // --- GENERATE REKAP OTOMATIS BERDASARKAN WAKTU & TABEL ---
+    // --- GENERATE REKAP OTOMATIS BERDASARKAN SHIFT, TANGGAL, & TABEL ---
     async function generateRekapWA() {
       const hari = document.getElementById('select-hari').value;
       const s1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
       const s2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
 
-      let allAssigned = [];
-      s1Cards.forEach(c => {
-        const id = c.dataset.id;
-        const nameNode = c.querySelector('b');
-        allAssigned.push({ id, nama: nameNode ? nameNode.innerText : 'Siswa', shift: 'Shift Istirahat 1' });
-      });
-      s2Cards.forEach(c => {
-        const id = c.dataset.id;
-        const nameNode = c.querySelector('b');
-        allAssigned.push({ id, nama: nameNode ? nameNode.innerText : 'Siswa', shift: 'Shift Istirahat 2' });
-      });
-
-      // Format Tanggal Hari Ini (Contoh: Kamis, 20 Agustus 2026)
+      // Format Tanggal Hari Ini
       const optionsTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       const tanggalHariIni = new Date().toLocaleDateString('id-ID', optionsTanggal);
 
       // Cek Waktu Sekarang untuk Status Shift 2
       const now = new Date();
-      const jamSekarang = now.getHours() * 60 + now.getMinutes(); // dalam satuan menit dari pukul 00:00
-      
-      // Ambil batas jam Expired Shift 1 dari input config untuk acuan otomatis waktu istirahat 1 selesai
+      const jamSekarang = now.getHours() * 60 + now.getMinutes();
       const expS1Str = document.getElementById('input-exp-s1').value || "09:50";
       const [expH, expM] = expS1Str.split(':').map(Number);
       const batasMenitShift1 = expH * 60 + expM; 
-      
       const shift2BelumMulai = jamSekarang < batasMenitShift1;
 
       let text = `📋 *LAPORAN & REKAP PIKET UKS PMR*\n`;
       text += `📅 Hari/Tanggal: ${hari}, ${tanggalHariIni}\n`;
       text += `------------------------------------\n\n`;
 
-      if (allAssigned.length === 0) {
-        text += `Belum ada petugas yang dijadwalkan pada hari ini.`;
-        document.getElementById('preview-text-wa').value = text;
-        return;
+      const getStatus = (item) => {
+        const logData = latestLogsCache.find(l => l.member_id.toString() === item.id.toString() && l.shift === item.shift);
+        if (logData) {
+          if (logData.status === 'ACC') return "✅ Hadir (Di-ACC)";
+          if (logData.status === 'Ditolak') return "❌ Ditolak (Kirim Ulang)";
+          return "⏳ Menunggu Validasi";
+        }
+        if (item.shift === 'Shift Istirahat 2' && shift2BelumMulai) return "⏳ Menunggu durasi Istirahat 2 dimulai";
+        return "❌ Belum absen";
+      };
+
+      // --- SHIFT ISTIRAHAT 1 ---
+      text += `⏰ *SHIFT ISTIRAHAT 1*\n`;
+      if (s1Cards.length === 0) {
+        text += `- Belum ada petugas.\n`;
+      } else {
+        s1Cards.forEach((c, idx) => {
+          const id = c.dataset.id;
+          const nameNode = c.querySelector('b');
+          const nama = nameNode ? nameNode.innerText : 'Siswa';
+          text += `${idx + 1}. ${nama} — ${getStatus({id, shift: 'Shift Istirahat 1'})}\n`;
+        });
       }
 
-      allAssigned.forEach((item, index) => {
-        // Cari status log di cache database (tabel validasi foto)
-        const logData = latestLogsCache.find(l => l.member_id.toString() === item.id.toString() && l.shift === item.shift);
-        
-        let statusText = "";
-        
-        if (logData) {
-          if (logData.status === 'ACC') {
-            statusText = "✅ Hadir (Absen di-ACC)";
-          } else if (logData.status === 'Ditolak') {
-            statusText = "❌ Absen Ditolak (Harap Kirim Ulang)";
-          } else {
-            statusText = "⏳ Menunggu Validasi Admin";
-          }
+      // --- SHIFT ISTIRAHAT 2 ---
+      if (hari !== 'Jumat') {
+        text += `\n────────────────────────\n`;
+        text += `⏰ *SHIFT ISTIRAHAT 2*\n`;
+        if (s2Cards.length === 0) {
+          text += `- Belum ada petugas.\n`;
         } else {
-          // Jika belum ada log foto dikirim
-          if (item.shift === 'Shift Istirahat 2' && shift2BelumMulai) {
-            statusText = "⏳ Menunggu durasi Istirahat 2 dimulai";
-          } else {
-            statusText = "❌ Belum absen / Alpha";
-          }
+          s2Cards.forEach((c, idx) => {
+            const id = c.dataset.id;
+            const nameNode = c.querySelector('b');
+            const nama = nameNode ? nameNode.innerText : 'Siswa';
+            text += `${idx + 1}. ${nama} — ${getStatus({id, shift: 'Shift Istirahat 2'})}\n`;
+          });
         }
+      }
 
-        text += `${index + 1}. *${item.nama}* (${item.shift})\n   Status: ${statusText}\n\n`;
-      });
-
-      text += `------------------------------------\n`;
-      text += `_Pesan otomatis dikirim melalui Panel Admin Piket UKS PMR._`;
+      text += `\n------------------------------------\n`;
+      text += `_Rekap ini dikirim secara otomatis._`;
 
       document.getElementById('preview-text-wa').value = text;
     }

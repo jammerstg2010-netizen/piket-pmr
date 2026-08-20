@@ -3,68 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absen Piket UKS - PMR</title>
+  <title>Absensi Piket UKS - PMR</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
     
     body {
-      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      background: #f4f7f6;
+      background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
+      background-size: 20px 20px;
       min-height: 100vh;
-      padding: 15px;
+      padding: 16px;
       color: #2d3748;
     }
 
-    .container { max-width: 800px; margin: 0 auto; }
+    .container { max-width: 700px; margin: 0 auto; }
 
     .header-card {
-      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
       padding: 20px;
-      border-radius: 16px;
+      border-radius: 18px;
       text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      color: white;
+      box-shadow: 0 10px 20px rgba(229, 62, 62, 0.2);
       margin-bottom: 20px;
     }
-
-    .header-card h1 { color: #8e2de2; font-size: 22px; font-weight: 700; }
-    .header-card p { color: #555; font-size: 13px; }
+    .header-card h1 { font-size: 22px; font-weight: 800; }
+    .header-card p { font-size: 12px; opacity: 0.9; }
 
     .card {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(10px);
+      background: #ffffff;
       border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      border: 1px solid #edf2f7;
       margin-bottom: 20px;
     }
 
-    .card h2 { font-size: 16px; color: #3182ce; margin-bottom: 12px; }
+    .card h2 { font-size: 15px; color: #2b6cb0; margin-bottom: 12px; font-weight: 700; }
 
     .table-responsive { overflow-x: auto; }
-
     table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { background: #edf2f7; color: #4a5568; padding: 10px; font-size: 12px; text-transform: uppercase; }
+    th { background: #f7fafc; color: #718096; padding: 10px; font-size: 11px; text-transform: uppercase; }
     td { padding: 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; }
 
-    .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
-    .badge-fase { background: #ebf8ff; color: #3182ce; }
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .badge-fase { background: #ebf8ff; color: #2b6cb0; }
     .status-belum { background: #fff5f5; color: #e53e3e; }
+    .status-acc { background: #c6f6d5; color: #22543d; }
+    .status-pending { background: #feebc8; color: #c05621; }
 
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #4a5568; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; background: white; outline: none; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #4a5568; }
+    .form-control { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; outline: none; }
+    .form-control:focus { border-color: #3182ce; }
 
-    .btn-gradient {
+    .preview-box {
+      width: 100%;
+      max-height: 180px;
+      border-radius: 10px;
+      object-fit: cover;
+      margin-top: 8px;
+      display: none;
+      border: 1px solid #cbd5e0;
+    }
+
+    .btn-submit {
       width: 100%;
       padding: 12px;
       border: none;
       border-radius: 10px;
-      background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+      background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
       color: white;
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
+    }
+    .btn-submit:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+    .expired-banner {
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      color: #c53030;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 12px;
     }
   </style>
 </head>
@@ -72,8 +99,8 @@
 
   <div class="container">
     <div class="header-card">
-      <h1>🏥 Piket UKS PMR</h1>
-      <p>Jadwal Pertugasan & Absensi Harian</p>
+      <h1>🏥 Absensi Piket UKS PMR</h1>
+      <p>Jadwal Pertugasan & Pelaporan Foto Bukti</p>
     </div>
 
     <!-- TABEL JADWAL HARIAN -->
@@ -106,33 +133,39 @@
       </div>
     </div>
 
-    <!-- UPLOAD FORM BUKTI -->
+    <!-- FORM SUBMISSION FOTO BUKTI -->
     <div class="card">
-      <h2>📸 Absen Foto Bukti Piket</h2>
+      <h2>📸 Unggah Laporan Foto Piket</h2>
+      
+      <div id="expired-notice" class="expired-banner" style="display: none;">
+        ⚠️ Batas pengiriman laporan foto hari ini telah ditutup (Sistem Expired jam 15:00 WIB).
+      </div>
+
       <form id="form-upload">
         <div class="form-group">
-          <label>Nama Anggota (Sesuai Jadwal Hari Ini):</label>
-          <select id="select-member" class="form-control" required>
+          <label>Pilih Nama Kamu (Jadwal Hari Ini):</label>
+          <select id="select-member" class="form-control" required onchange="autoFillShift()">
             <option value="">-- Pilih Nama Kamu --</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Shift Istirahat:</label>
+          <label>Shift Pertugasan:</label>
           <select id="select-shift" class="form-control" required>
-            <option value="Istirahat 1">Shift Istirahat 1</option>
-            <option value="Istirahat 2">Shift Istirahat 2</option>
+            <option value="Shift Istirahat 1">Shift Istirahat 1</option>
+            <option value="Shift Istirahat 2">Shift Istirahat 2</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Foto Bukti Piket:</label>
-          <input type="file" id="input-foto" class="form-control" accept="image/*" required>
+          <label>Foto Bukti Kegiatan Piket UKS:</label>
+          <input type="file" id="input-foto" class="form-control" accept="image/*" required onchange="previewImage(event)">
+          <img id="img-preview" class="preview-box" alt="Preview Foto">
         </div>
 
-        <button type="submit" class="btn-gradient">Kirim Laporan Piket</button>
+        <button type="submit" id="btn-submit" class="btn-submit">🚀 Kirim Laporan Piket</button>
       </form>
-      <div id="pesan-status" style="margin-top: 8px; text-align: center; font-size: 12px; font-weight: 600;"></div>
+      <div id="pesan-status" style="margin-top: 12px; text-align: center; font-size: 12px; font-weight: 700;"></div>
     </div>
   </div>
 
@@ -140,6 +173,25 @@
     const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentSchedule = [];
+
+    function checkExpired() {
+      const currentHour = new Date().getHours();
+      if (currentHour >= 15) { // Expired setelah jam 15:00 WIB
+        document.getElementById('expired-notice').style.display = 'block';
+        document.getElementById('btn-submit').disabled = true;
+      }
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      const preview = document.getElementById('img-preview');
+      if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+      }
+    }
 
     async function loadScheduleSiswa() {
       const hari = document.getElementById('filter-hari').value;
@@ -149,60 +201,65 @@
       tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
-      // 1. Ambil data semua member
-      const { data: membersData } = await supabase.from('members').select('*');
-      
-      // Map member berdasarkan ID
-      const memberMap = {};
-      if(membersData) {
-        membersData.forEach(m => { memberMap[m.id] = m; });
-      }
+      const { data: logs } = await supabase.from('piket_logs').select('*');
+      const logMap = {};
+      if (logs) logs.forEach(l => { logMap[l.member_id] = l.status; });
 
-      // 2. Ambil data jadwal piket
-      const { data: scheduleData, error } = await supabase
+      const { data: scheduleData } = await supabase
         .from('piket_schedule')
-        .select('*')
+        .select('*, members(id, nama, fase)')
         .eq('hari', hari);
 
-      if (error || !scheduleData || scheduleData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Belum ada jadwal piket untuk hari ' + hari + '</td></tr>';
+      if (!scheduleData || scheduleData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Belum ada jadwal piket hari ${hari}</td></tr>`;
         return;
       }
 
+      currentSchedule = scheduleData;
       tbody.innerHTML = '';
 
-      // 3. Tampilkan data ke tabel & dropdown
       scheduleData.forEach(item => {
-        const member = memberMap[item.member_id];
-        if (member) {
+        if (item.members) {
+          const m = item.members;
+          const statusLog = logMap[m.id];
+          let statusBadge = '<span class="badge status-belum">Belum Piket</span>';
+
+          if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending">Menunggu ACC</span>';
+          if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc">Sudah ACC</span>';
+
           tbody.innerHTML += `
             <tr>
-              <td><b>${member.nama}</b></td>
-              <td><span class="badge badge-fase">Fase ${member.fase}</span></td>
+              <td><b>${m.nama}</b></td>
+              <td><span class="badge badge-fase">Fase ${m.fase}</span></td>
               <td>${item.shift}</td>
-              <td><span class="badge status-belum">Belum Piket</span></td>
+              <td>${statusBadge}</td>
             </tr>
           `;
 
-          selectMember.innerHTML += `<option value="${member.id}">${member.nama} (${item.shift})</option>`;
+          selectMember.innerHTML += `<option value="${m.id}">${m.nama}</option>`;
         }
       });
     }
 
-    // Submit Laporan Foto Piket
+    function autoFillShift() {
+      const memberId = document.getElementById('select-member').value;
+      const target = currentSchedule.find(s => s.member_id.toString() === memberId.toString());
+      if (target) {
+        document.getElementById('select-shift').value = target.shift;
+      }
+    }
+
     document.getElementById('form-upload').addEventListener('submit', async (e) => {
       e.preventDefault();
       const statusPesan = document.getElementById('pesan-status');
-      statusPesan.style.color = "#3182ce";
-      statusPesan.innerText = "⏳ Sedang mengunggah foto...";
+      statusPesan.style.color = "#3182ce"; statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
 
       const memberId = document.getElementById('select-member').value;
       const shift = document.getElementById('select-shift').value;
       const file = document.getElementById('input-foto').files[0];
 
       if (!memberId) {
-        statusPesan.style.color = "#e53e3e";
-        statusPesan.innerText = "❌ Pilih nama anggota terlebih dahulu!";
+        statusPesan.style.color = "#e53e3e"; statusPesan.innerText = "❌ Pilih nama kamu!";
         return;
       }
 
@@ -211,7 +268,7 @@
 
       if (uploadErr) {
         statusPesan.style.color = "#e53e3e";
-        statusPesan.innerText = "❌ Gagal upload foto. Pastikan bucket 'bukti-piket' di Supabase sudah Public!";
+        statusPesan.innerText = "❌ Gagal upload foto. Pastikan Bucket Supabase 'bukti-piket' sudah Public!";
         return;
       }
 
@@ -221,21 +278,23 @@
         member_id: memberId,
         shift: shift,
         foto_url: fotoUrl,
-        status: 'Menunggu Tanggapan Admin'
+        status: 'Pending'
       }]);
 
       statusPesan.style.color = "#38a169";
-      statusPesan.innerText = "✅ Laporan piket berhasil dikirim!";
+      statusPesan.innerText = "✅ Laporan piket berhasil dikirim! Menunggu ACC Admin.";
       document.getElementById('form-upload').reset();
+      document.getElementById('img-preview').style.display = 'none';
+      loadScheduleSiswa();
     });
 
-    // Deteksi Hari Ini
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     if (document.querySelector(`#filter-hari option[value="${today}"]`)) {
       document.getElementById('filter-hari').value = today;
     }
 
+    checkExpired();
     loadScheduleSiswa();
   </script>
 </body>

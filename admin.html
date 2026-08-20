@@ -42,7 +42,6 @@
     }
     .card { background: white; border-radius: 18px; padding: 22px; margin-bottom: 24px; border: 1px solid #edf2f7; }
     
-    /* GRID DUA KOLOM DENGAN SCROLL MANDIRI */
     .drag-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -53,18 +52,16 @@
       .drag-grid { grid-template-columns: 1fr; }
     }
 
-    /* KOTAK SCROLL SISWA FASE E & FASE F */
     .fase-box {
       background: #f8fafc;
       border: 2px dashed #cbd5e0;
       border-radius: 12px;
       padding: 10px;
-      height: 180px; /* Lebar dan tinggi pas agar tidak makan layar */
-      overflow-y: auto; /* Scroll hanya ada di dalam kotak ini */
+      height: 180px;
+      overflow-y: auto;
       margin-bottom: 12px;
     }
 
-    /* KOTAK SHIFT TARGET */
     .shift-target {
       background: #f1f5f9;
       border: 2px dashed #94a3b8;
@@ -76,7 +73,6 @@
       margin-top: 6px;
     }
 
-    /* KARTU MEMBER */
     .draggable-card {
       background: white;
       border: 1px solid #cbd5e0;
@@ -132,7 +128,24 @@
   <div class="container" id="admin-content" style="display: none;">
     <div class="header-card">
       <h1>🚑 Panel Admin Piket UKS PMR</h1>
-      <p>Kelola Shift Harian & Validasi Laporan Bukti Foto</p>
+      <p>Kelola Shift Harian, Pengumuman & Validasi Laporan Bukti Foto</p>
+    </div>
+
+    <!-- FITUR BARU: REGULASI SISTEM (EXPIRED & ANNOUNCEMENT) -->
+    <div class="card">
+      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">⚙️ Pengaturan Jam Expired & Running Text</h3>
+      <div class="grid-2">
+        <div>
+          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">⏰ Batas Jam Expired Absen:</label>
+          <input type="time" id="input-expired-time" class="form-control" value="15:30">
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">📢 Running Text Pengumuman:</label>
+          <input type="text" id="input-announcement" class="form-control" placeholder="Contoh: Utamakan kerapihan saat bertugas di UKS!">
+        </div>
+      </div>
+      <button type="button" class="btn btn-blue" onclick="simpanPengaturanSistem()">💾 Simpan Pengaturan Sistem</button>
+      <div id="status-config" style="margin-top: 8px; font-size: 12px; font-weight: bold; text-align: center;"></div>
     </div>
 
     <!-- TAMBAH ANGGOTA -->
@@ -164,7 +177,7 @@
       </div>
 
       <div class="drag-grid">
-        <!-- KOLOM KIRI: DUA KOTAK MANDIRI (FASE E & FASE F) -->
+        <!-- KOLOM KIRI -->
         <div>
           <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">📇 Belum Dijadwalkan (Fase E):</label>
           <div id="source-fase-e" class="fase-box" ondrop="drop(event, 'source-e')" ondragover="allowDrop(event)"></div>
@@ -173,7 +186,7 @@
           <div id="source-fase-f" class="fase-box" ondrop="drop(event, 'source-f')" ondragover="allowDrop(event)"></div>
         </div>
 
-        <!-- KOLOM KANAN: KOTAK TARGET SHIFT -->
+        <!-- KOLOM KANAN -->
         <div>
           <div>
             <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
@@ -187,7 +200,7 @@
         </div>
       </div>
 
-      <!-- Aksi Jadwal -->
+      <!-- AKSI JADWAL -->
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button type="button" class="btn btn-red" style="flex: 2;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
         <button type="button" class="btn btn-gray" style="flex: 1;" onclick="clearJadwalHariIni()">🗑️ Kosongkan Shift Hari Ini</button>
@@ -195,7 +208,7 @@
       <div id="status-terbit" style="margin-top: 10px; font-size: 13px; text-align: center; font-weight: bold;"></div>
     </div>
 
-    <!-- VALIDASI FOTO & AMANIN DENGAN HAPUS LOG -->
+    <!-- VALIDASI FOTO -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h3 style="font-size:15px; color:#2b6cb0;">📸 Validasi Absen Bukti Foto</h3>
@@ -247,6 +260,7 @@
       try {
         if (window.supabase) {
           db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          loadConfigTersimpan();
           await loadMembers();
           await loadJadwalHariIni();
           await loadLogsAdmin();
@@ -254,6 +268,28 @@
       } catch (err) {
         console.error("Gagal load Supabase:", err);
       }
+    }
+
+    function loadConfigTersimpan() {
+      const expTime = localStorage.getItem('piket_expired_time') || "15:30";
+      const runningText = localStorage.getItem('piket_announcement') || "Selamat bertugas untuk tim piket hari ini! Jaga kebersihan ruang UKS.";
+      document.getElementById('input-expired-time').value = expTime;
+      document.getElementById('input-announcement').value = runningText;
+    }
+
+    function simpanPengaturanSistem() {
+      const expTime = document.getElementById('input-expired-time').value;
+      const runningText = document.getElementById('input-announcement').value.trim();
+
+      if (!expTime) return alert("Pilih jam expired!");
+
+      localStorage.setItem('piket_expired_time', expTime);
+      localStorage.setItem('piket_announcement', runningText);
+
+      const status = document.getElementById('status-config');
+      status.style.color = "#38a169";
+      status.innerText = "✅ Jam Expired & Pengumuman berhasil disimpan!";
+      setTimeout(() => { status.innerText = ""; }, 3000);
     }
 
     async function loadMembers() {
@@ -292,7 +328,6 @@
       } else if (targetZone === 'Shift Istirahat 2') {
         document.getElementById('target-shift-2').appendChild(card);
       } else {
-        // Kembalikan ke kotaknya masing-masing (E atau F)
         if (fase === 'E') {
           document.getElementById('source-fase-e').appendChild(card);
         } else {
@@ -331,7 +366,6 @@
         });
       }
 
-      // Masukkan anggota yang belum dijadwalkan sesuai Fase masing-masing
       membersAll.forEach(m => {
         if (!assignedIds.has(m.id.toString())) {
           const card = createMemberCard(m.id, m.nama, m.fase);
@@ -383,7 +417,7 @@
     }
 
     async function hapusAnggota(e, id, nama) {
-      e.stopPropagation(); // Mencegah pemicu event drag
+      e.stopPropagation();
       if (confirm(`Hapus siswa "${nama}" dari database anggota?`)) {
         await db.from('members').delete().eq('id', id);
         await db.from('piket_schedule').delete().eq('member_id', id);
@@ -438,7 +472,7 @@
 
     async function resetSemuaLogFoto() {
       if (confirm("⚠️ YAKIN INGIN MENGHAPUS SEMUA LOG FOTO ABSENSI?\n\nFitur ini khusus digunakan saat membersihkan data uji coba (Test Run).")) {
-        await db.from('piket_logs').delete().neq('id', 0); // Hapus semua row
+        await db.from('piket_logs').delete().neq('id', 0);
         loadLogsAdmin();
       }
     }

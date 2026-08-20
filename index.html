@@ -13,6 +13,10 @@
     .header-card { background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%); padding: 20px; border-radius: 18px; text-align: center; color: white; box-shadow: 0 10px 20px rgba(229, 62, 62, 0.2); margin-bottom: 20px; }
     .header-card h1 { font-size: 22px; font-weight: 800; }
     .header-card p { font-size: 12px; opacity: 0.9; }
+    
+    /* Widget Waktu Realtime */
+    .time-widget { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 14px; border-radius: 12px; display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; }
+
     .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7; margin-bottom: 20px; }
     .card h2 { font-size: 15px; color: #2b6cb0; margin-bottom: 12px; font-weight: 700; }
     
@@ -24,7 +28,7 @@
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
     .badge-fase { background: #ebf8ff; color: #2b6cb0; }
     
-    /* Style Status dengan Bulatan Indikator Warna */
+    /* Style Status Bulatan */
     .status-belum { background: #fff5f5; color: #e53e3e; }
     .status-acc { background: #c6f6d5; color: #22543d; }
     .status-pending { background: #feebc8; color: #c05621; }
@@ -50,6 +54,11 @@
     <div class="header-card">
       <h1>🏥 Absensi Piket UKS PMR</h1>
       <p>Jadwal Pertugasan & Pelaporan Foto Bukti</p>
+      
+      <!-- TANGGAL DAN JAM REALTIME -->
+      <div class="time-widget">
+        📅 <span id="current-date">--</span> | ⏰ <span id="current-time">00:00:00 WIB</span>
+      </div>
     </div>
 
     <!-- TABEL JADWAL HARIAN -->
@@ -67,7 +76,7 @@
         </select>
       </div>
 
-      <!-- TABEL ISTIRAHAT 1 -->
+      <!-- TABEL SHIFT 1 -->
       <div class="shift-title">⏰ Shift Istirahat 1</div>
       <div class="table-responsive">
         <table>
@@ -84,7 +93,7 @@
         </table>
       </div>
 
-      <!-- TABEL ISTIRAHAT 2 -->
+      <!-- TABEL SHIFT 2 -->
       <div id="container-shift-2">
         <div class="shift-title">⏰ Shift Istirahat 2</div>
         <div class="table-responsive">
@@ -109,7 +118,7 @@
       <h2>📸 Unggah Laporan Foto Piket</h2>
       
       <div id="expired-notice" class="expired-banner" style="display: none;">
-        ⚠️ Batas pengiriman laporan foto hari ini telah ditutup (Sistem Expired jam 15:00 WIB).
+        ⚠️ Batas pengiriman laporan foto hari ini telah ditutup (Sistem Expired jam <span id="text-expired-time">15:30</span> WIB).
       </div>
 
       <form id="form-upload">
@@ -151,9 +160,30 @@
     const BUCKET_NAME = "piket-buktifoto"; 
     let currentSchedule = [];
 
+    // Pengaturan Waktu Expired Default (15:30) & Custom
+    let customExpiredTime = localStorage.getItem('piket_expired_time') || "15:30";
+
+    function updateRealtimeClock() {
+      const now = new Date();
+      const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', options);
+      
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('current-time').innerText = `${hours}:${minutes}:${seconds} WIB`;
+    }
+
     function checkExpired() {
-      const currentHour = new Date().getHours();
-      if (currentHour >= 15) { 
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+
+      const [expHour, expMin] = customExpiredTime.split(':').map(Number);
+      document.getElementById('text-expired-time').innerText = customExpiredTime;
+
+      // Cek apakah waktu saat ini telah melewati batas jam & menit expired
+      if (currentHour > expHour || (currentHour === expHour && currentMin >= expMin)) { 
         document.getElementById('expired-notice').style.display = 'block';
         document.getElementById('btn-submit').disabled = true;
       }
@@ -179,7 +209,6 @@
       tbody2.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
-      // Atur Tampilan Khusus Hari Jumat (Hanya 1 Shift)
       if (hari === 'Jumat') {
         containerShift2.style.display = 'none';
       } else {
@@ -216,8 +245,6 @@
 
         currentSchedule = scheduleData;
         
-        let countShift1 = 0;
-        let countShift2 = 0;
         let html1 = '';
         let html2 = '';
 
@@ -226,7 +253,6 @@
           if (m) {
             const statusLog = logMap[m.id];
             
-            // Badge Status dengan Bulatan Warna
             let statusBadge = '<span class="badge status-belum"><span class="status-dot dot-red"></span> Belum Piket</span>';
             if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending"><span class="status-dot dot-yellow"></span> Menunggu ACC</span>';
             if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc"><span class="status-dot dot-green"></span> Sudah ACC</span>';
@@ -241,10 +267,8 @@
 
             if (item.shift === 'Shift Istirahat 1') {
               html1 += rowHtml;
-              countShift1++;
             } else if (item.shift === 'Shift Istirahat 2') {
               html2 += rowHtml;
-              countShift2++;
             }
 
             selectMember.innerHTML += `<option value="${m.id}">${m.nama}</option>`;
@@ -316,6 +340,10 @@
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     document.getElementById('filter-hari').value = today;
+
+    // Update Jam Realtime Setiap Detik
+    setInterval(updateRealtimeClock, 1000);
+    updateRealtimeClock();
 
     checkExpired();
     loadScheduleSiswa();

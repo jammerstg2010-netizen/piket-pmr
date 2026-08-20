@@ -163,12 +163,14 @@
 
     const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
-    let supabase, membersAll = [];
+    
+    // VARIABEL 'db' DIGUNAKAN AGAR TIDAK BENTROK NAMA DENGAN LIBRARY SUPABASE GLOBAL
+    let db, membersAll = [];
 
     async function initApp() {
       try {
         if (window.supabase) {
-          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           await loadMembers();
           await loadJadwalHariIni();
           await loadLogsAdmin();
@@ -179,7 +181,7 @@
     }
 
     async function loadMembers() {
-      const { data } = await supabase.from('members').select('*').order('nama');
+      const { data } = await db.from('members').select('*').order('nama');
       membersAll = data || [];
     }
 
@@ -218,7 +220,7 @@
         document.getElementById('container-shift-2').style.display = 'block';
       }
 
-      const { data } = await supabase.from('piket_schedule').select('*').eq('hari', hari);
+      const { data } = await db.from('piket_schedule').select('*').eq('hari', hari);
       const assignedIds = new Set();
 
       if (data) {
@@ -254,8 +256,8 @@
         shift2Cards.forEach(c => payload.push({ hari, member_id: c.dataset.id, shift: 'Shift Istirahat 2' }));
       }
 
-      await supabase.from('piket_schedule').delete().eq('hari', hari);
-      if (payload.length > 0) await supabase.from('piket_schedule').insert(payload);
+      await db.from('piket_schedule').delete().eq('hari', hari);
+      if (payload.length > 0) await db.from('piket_schedule').insert(payload);
 
       status.style.color = "#38a169";
       status.innerText = `✅ Jadwal ${hari} berhasil terbit!`;
@@ -265,7 +267,7 @@
       const nama = document.getElementById('nama-baru').value.trim();
       const fase = document.getElementById('fase-baru').value;
       if (!nama) return alert("Masukkan nama!");
-      await supabase.from('members').insert([{ nama, fase }]);
+      await db.from('members').insert([{ nama, fase }]);
       document.getElementById('nama-baru').value = '';
       await loadMembers();
       await loadJadwalHariIni();
@@ -273,7 +275,7 @@
 
     async function loadLogsAdmin() {
       const tbody = document.getElementById('tabel-log-admin');
-      const { data: logs } = await supabase.from('piket_logs').select('*').order('id', { ascending: false });
+      const { data: logs } = await db.from('piket_logs').select('*').order('id', { ascending: false });
 
       if (!logs || logs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada laporan foto.</td></tr>';
@@ -303,7 +305,7 @@
     }
 
     async function updateStatusLog(id, status) {
-      await supabase.from('piket_logs').update({ status }).eq('id', id);
+      await db.from('piket_logs').update({ status }).eq('id', id);
       loadLogsAdmin();
     }
   </script>

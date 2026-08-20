@@ -5,185 +5,261 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - Piket UKS PMR</title>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
     
     body {
-      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      background: #f4f7f6;
+      background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
+      background-size: 20px 20px;
       min-height: 100vh;
       padding: 20px;
       color: #2d3748;
     }
 
-    .container { max-width: 900px; margin: 0 auto; }
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    /* Login Screen */
+    #login-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .login-card {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .login-card h2 { color: #e53e3e; margin-bottom: 6px; font-size: 20px; font-weight: 800; }
 
     .header-card {
-      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-      padding: 20px;
-      border-radius: 16px;
+      background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
+      padding: 24px;
+      border-radius: 20px;
       text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      color: white;
+      box-shadow: 0 10px 25px rgba(229, 62, 62, 0.25);
+      margin-bottom: 24px;
     }
-    .header-card h1 { color: #8e2de2; font-size: 22px; font-weight: 700; }
+    .header-card h1 { font-size: 24px; font-weight: 800; }
+    .header-card p { font-size: 13px; opacity: 0.9; margin-top: 4px; }
 
     .card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-      margin-bottom: 20px;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 1px solid #edf2f7;
+      margin-bottom: 24px;
     }
 
-    .card h2 { font-size: 16px; color: #3182ce; margin-bottom: 12px; }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2b6cb0;
+      margin-bottom: 16px;
+    }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
     .form-control {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #cbd5e0;
-      border-radius: 8px;
+      padding: 10px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
       font-size: 13px;
       outline: none;
+      background: #f8fafc;
       margin-bottom: 10px;
     }
+    .form-control:focus { border-color: #3182ce; background: #fff; }
 
     /* Area Drag and Drop */
-    .drag-box {
-      min-height: 150px;
-      background: #f8fafc;
+    .drag-box-container {
+      background: #f7fafc;
       border: 2px dashed #cbd5e0;
-      border-radius: 10px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 220px;
+      max-height: 320px;
+      overflow-y: auto;
     }
 
     .shift-target {
       min-height: 100px;
       background: #ebf8ff;
-      border: 2px dashed #63b3ed;
-      border-radius: 10px;
+      border: 2px dashed #90cdf4;
+      border-radius: 12px;
       padding: 10px;
-      margin-top: 5px;
+      margin-top: 6px;
     }
 
     .draggable-card {
       background: white;
       border: 1px solid #e2e8f0;
-      padding: 8px 12px;
-      border-radius: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
       margin-bottom: 8px;
       cursor: grab;
       font-size: 13px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      user-select: none;
     }
-    .draggable-card:active { cursor: grabbing; background: #edf2f7; }
+    .draggable-card:active { cursor: grabbing; opacity: 0.6; }
 
-    .badge {
-      background: #ebf8ff;
-      color: #3182ce;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-    }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-fase { background: #ebf8ff; color: #2b6cb0; }
+    .badge-pending { background: #feebc8; color: #c05621; }
+    .badge-acc { background: #c6f6d5; color: #22543d; }
+    .badge-reject { background: #fed7d7; color: #9b2c2c; }
 
-    .btn-gradient {
-      width: 100%;
-      padding: 12px;
+    .btn {
+      padding: 10px 16px;
       border: none;
       border-radius: 10px;
-      background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
-      color: white;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13px;
       cursor: pointer;
-      margin-top: 15px;
+      transition: all 0.2s;
     }
-    .btn-gradient:hover { opacity: 0.95; }
+    .btn-red { background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); color: white; }
+    .btn-blue { background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%); color: white; }
+    .btn-green { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; }
+    .btn-gray { background: #e2e8f0; color: #4a5568; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-    .btn-blue {
-      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    }
+    .table-responsive { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #f7fafc; color: #718096; padding: 10px 12px; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #edf2f7; }
+    td { padding: 12px; font-size: 13px; border-bottom: 1px solid #edf2f7; vertical-align: middle; }
 
-    .notice-jumat {
-      font-size: 11px;
-      color: #e53e3e;
-      font-weight: bold;
-      margin-top: 4px;
-    }
+    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #e2e8f0; }
+
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+    .modal img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <!-- OVERLAY LOGIN ADMIN -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>🔐 Login Admin UKS</h2>
+      <p style="font-size: 12px; color: #718096; margin-bottom: 16px;">Masukkan kredensial untuk mengelola jadwal</p>
+      <input type="text" id="admin-user" class="form-control" placeholder="Username Admin">
+      <input type="password" id="admin-pass" class="form-control" placeholder="Password Admin">
+      <button class="btn btn-red" style="width: 100%; margin-top: 5px;" onclick="checkLogin()">Masuk Panel Admin</button>
+      <div id="login-err" style="color: #e53e3e; font-size: 12px; margin-top: 10px; font-weight: 600;"></div>
+    </div>
+  </div>
+
+  <div class="container" id="admin-content" style="display: none;">
     <div class="header-card">
-      <h1>⚙️ Kelola Jadwal Piket UKS</h1>
-      <p style="font-size: 12px; color: #555;">Panel Admin Susun Shift & Terbitkan Jadwal</p>
+      <h1>🚑 Panel Admin Piket UKS PMR</h1>
+      <p>Kelola Shift Harian & Validasi Laporan Bukti Foto</p>
     </div>
 
     <!-- TAMBAH ANGGOTA BARU -->
     <div class="card">
-      <h2>➕ Tambah Anggota PMR Baru</h2>
+      <div class="card-title">➕ Tambah Anggota PMR</div>
       <div class="grid-2">
-        <input type="text" id="nama-baru" class="form-control" placeholder="Nama Lengkap Siswa" style="margin-bottom: 0;">
+        <input type="text" id="nama-baru" class="form-control" placeholder="Nama Lengkap Siswa..." style="margin-bottom:0;">
         <div style="display: flex; gap: 8px;">
-          <select id="fase-baru" class="form-control" style="margin-bottom: 0; width: 40%;">
+          <select id="fase-baru" class="form-control" style="width: 40%; margin-bottom:0;">
             <option value="E">Fase E</option>
             <option value="F">Fase F</option>
           </select>
-          <button type="button" class="btn-gradient btn-blue" style="margin-top:0;" onclick="tambahAnggota()">Simpan</button>
+          <button type="button" class="btn btn-blue" style="width: 60%;" onclick="tambahAnggota()">Simpan</button>
         </div>
       </div>
     </div>
 
-    <!-- PANEL SUSUN JADWAL (DRAG & DROP) -->
+    <!-- PANEL DRAG AND DROP JADWAL -->
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h2>📌 Susun Jadwal Piket</h2>
-        <select id="select-hari" class="form-control" style="width: auto; margin-bottom: 0;" onchange="loadJadwalHariIni()">
-          <option value="Senin">Senin</option>
-          <option value="Selasa">Selasa</option>
-          <option value="Rabu">Rabu</option>
-          <option value="Kamis">Kamis</option>
-          <option value="Jumat">Jumat</option>
-        </select>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title" style="margin-bottom:0;">📌 Susun Shift Pertugasan</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12px; font-weight: bold;">Pilih Hari:</label>
+          <select id="select-hari" class="form-control" style="width: auto; margin-bottom:0;" onchange="loadJadwalHariIni()">
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+          </select>
+        </div>
       </div>
 
       <div class="grid-2">
-        <!-- LIST ANGGOTA (KIRI) -->
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">📇 Daftar Anggota (Geser ke Shift):</label>
-          <div id="source-list" class="drag-box" style="margin-top: 5px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)">
-            <!-- List nama anggota -->
-          </div>
+          <label style="font-size: 12px; font-weight: 700; color: #4a5568;">📇 Anggota Belum Dijadwalkan:</label>
+          <div id="source-list" class="drag-box-container" style="margin-top: 6px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)"></div>
         </div>
 
-        <!-- AREA SHIFT (KANAN) -->
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
+          <label style="font-size: 12px; font-weight: 700; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
           <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
 
-          <!-- SHIFT 2 (OTOMATIS HILANG DI HARI JUMAT) -->
-          <div id="container-shift-2" style="margin-top: 10px;">
-            <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
+          <div id="container-shift-2" style="margin-top: 12px;">
+            <label style="font-size: 12px; font-weight: 700; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
             <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
           </div>
-          <div id="notice-jumat" class="notice-jumat" style="display: none;">⚠️ Hari Jumat hanya ada Shift Istirahat 1.</div>
+          <div id="notice-jumat" style="display:none; margin-top:8px; font-size:11px; color:#e53e3e; font-weight:bold;">
+            ⚠️ Hari Jumat hanya tersedia Shift Istirahat 1.
+          </div>
         </div>
       </div>
 
-      <!-- TOMBOL TERBITKAN -->
-      <button type="button" class="btn-gradient" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
+      <button type="button" class="btn btn-red" style="width: 100%; margin-top: 20px;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
       <div id="status-terbit" style="margin-top: 10px; font-size: 13px; font-weight: bold; text-align: center;"></div>
     </div>
 
+    <!-- REKAP FOTO & ACC -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div class="card-title" style="margin-bottom:0;">📸 Validasi Absen Bukti Foto</div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-green" onclick="exportDataLog()">📥 Export CSV</button>
+          <button type="button" class="btn btn-gray" onclick="clearLogsHariIni()">🧹 Bersihkan Log</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Nama Petugas</th>
+              <th>Shift</th>
+              <th>Bukti Foto</th>
+              <th>Status</th>
+              <th>Aksi Admin</th>
+            </tr>
+          </thead>
+          <tbody id="tabel-log-admin">
+            <tr><td colspan="6" style="text-align:center; color:#a0aec0;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="imgModal" class="modal" onclick="this.style.display='none'">
+    <img id="modalImg" src="" alt="Bukti Piket Full">
   </div>
 
   <script>
@@ -193,197 +269,196 @@
 
     let membersAll = [];
 
+    function checkLogin() {
+      const u = document.getElementById('admin-user').value;
+      const p = document.getElementById('admin-pass').value;
+      if (u === 'adminpmr' && p === 'piketuks2026') {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        init();
+      } else {
+        document.getElementById('login-err').innerText = '❌ Username atau Password Salah!';
+      }
+    }
+
     async function init() {
       await loadMembers();
       await loadJadwalHariIni();
+      await loadLogsAdmin();
     }
 
-    // 1. Ambil data semua anggota PMR
     async function loadMembers() {
-      const { data, error } = await supabase.from('members').select('*').order('nama');
-      if (error) console.error("Error load members:", error);
+      const { data } = await supabase.from('members').select('*').order('nama');
       membersAll = data || [];
     }
 
-    // 2. Render daftar nama di sebelah kiri (yang belum masuk shift)
-    function renderSourceList() {
-      const sourceBox = document.getElementById('source-list');
-      sourceBox.innerHTML = '';
-
-      const selectedCards = Array.from(document.querySelectorAll('.shift-target .draggable-card'));
-      const selectedIds = selectedCards.map(el => el.dataset.id);
-
-      membersAll.forEach(m => {
-        if (!selectedIds.includes(m.id.toString())) {
-          sourceBox.appendChild(createMemberCard(m.id, m.nama, m.fase));
-        }
-      });
-    }
-
-    // 3. Buat Kartu Anggota Draggable
     function createMemberCard(id, nama, fase) {
       const div = document.createElement('div');
       div.className = 'draggable-card';
       div.draggable = true;
       div.id = `member-${id}`;
       div.dataset.id = id;
-
-      div.ondragstart = (e) => {
-        e.dataTransfer.setData("text/plain", id);
-      };
-
-      div.innerHTML = `
-        <span><b>${nama}</b></span>
-        <span class="badge">Fase ${fase}</span>
-      `;
+      div.ondragstart = (e) => e.dataTransfer.setData("text/plain", id);
+      div.innerHTML = `<span><b>${nama}</b></span><span class="badge badge-fase">Fase ${fase}</span>`;
       return div;
     }
 
-    // 4. Handlers Drag and Drop
-    function allowDrop(e) {
-      e.preventDefault();
-    }
+    function allowDrop(e) { e.preventDefault(); }
 
     function drop(e, targetZone) {
       e.preventDefault();
       const hari = document.getElementById('select-hari').value;
       const id = e.dataTransfer.getData("text/plain");
       const card = document.getElementById(`member-${id}`);
-
       if (!card) return;
 
-      // Jika Jumat, tidak boleh lepas ke Shift 2
       if (hari === 'Jumat' && targetZone === 'Shift Istirahat 2') {
-        alert("Hari Jumat tidak ada Shift Istirahat 2!");
+        alert("⚠️ Hari Jumat tidak ada Shift Istirahat 2!");
         return;
       }
 
-      if (targetZone === 'Shift Istirahat 1') {
-        document.getElementById('target-shift-1').appendChild(card);
-      } else if (targetZone === 'Shift Istirahat 2') {
-        document.getElementById('target-shift-2').appendChild(card);
-      } else {
-        document.getElementById('source-list').appendChild(card);
-      }
+      if (targetZone === 'Shift Istirahat 1') document.getElementById('target-shift-1').appendChild(card);
+      else if (targetZone === 'Shift Istirahat 2') document.getElementById('target-shift-2').appendChild(card);
+      else document.getElementById('source-list').appendChild(card);
     }
 
-    // 5. FUNGSI TERBITKAN JADWAL
-    async function terbitkanJadwal() {
-      const hari = document.getElementById('select-hari').value;
-      const status = document.getElementById('status-terbit');
-
-      status.style.color = "#3182ce";
-      status.innerText = "⏳ Sedang menerbitkan jadwal...";
-
-      const shift1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
-      const shift2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
-
-      if (shift1Cards.length === 0 && (hari === 'Jumat' || shift2Cards.length === 0)) {
-        status.style.color = "#e53e3e";
-        status.innerText = "⚠️ Geser minimal 1 anggota ke dalam kotak shift!";
-        return;
-      }
-
-      // Susun Payload
-      const payload = [];
-
-      shift1Cards.forEach(c => {
-        payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 1' });
-      });
-
-      if (hari !== 'Jumat') {
-        shift2Cards.forEach(c => {
-          payload.push({ hari: hari, member_id: c.dataset.id, shift: 'Shift Istirahat 2' });
-        });
-      }
-
-      // Hapus Jadwal Lama
-      const { error: delErr } = await supabase.from('piket_schedule').delete().eq('hari', hari);
-      if (delErr) {
-        status.style.color = "#e53e3e";
-        status.innerText = "❌ Gagal mengosongkan jadwal lama: " + delErr.message;
-        return;
-      }
-
-      // Insert Jadwal Baru
-      const { error: insErr } = await supabase.from('piket_schedule').insert(payload);
-
-      if (insErr) {
-        status.style.color = "#e53e3e";
-        status.innerText = "❌ Gagal terbit: " + insErr.message;
-      } else {
-        status.style.color = "#38a169";
-        status.innerText = "✅ Jadwal hari " + hari + " berhasil diterbitkan!";
-      }
-    }
-
-    // 6. Cek Hari dan Load Jadwal
     async function loadJadwalHariIni() {
       const hari = document.getElementById('select-hari').value;
       const s1 = document.getElementById('target-shift-1');
       const s2 = document.getElementById('target-shift-2');
-      const shift2Container = document.getElementById('container-shift-2');
-      const noticeJumat = document.getElementById('notice-jumat');
+      s1.innerHTML = ''; s2.innerHTML = '';
 
-      document.getElementById('status-terbit').innerText = '';
-      s1.innerHTML = '';
-      s2.innerHTML = '';
-
-      // Pengaturan khusus hari Jumat
       if (hari === 'Jumat') {
-        shift2Container.style.display = 'none';
-        noticeJumat.style.display = 'block';
+        document.getElementById('container-shift-2').style.display = 'none';
+        document.getElementById('notice-jumat').style.display = 'block';
       } else {
-        shift2Container.style.display = 'block';
-        noticeJumat.style.display = 'none';
+        document.getElementById('container-shift-2').style.display = 'block';
+        document.getElementById('notice-jumat').style.display = 'none';
       }
 
-      // Load data dari Supabase
       const { data } = await supabase.from('piket_schedule').select('*').eq('hari', hari);
+      const assignedIds = new Set();
 
-      if (data && data.length > 0) {
+      if (data) {
         data.forEach(item => {
           const member = membersAll.find(m => m.id.toString() === item.member_id.toString());
           if (member) {
+            assignedIds.add(member.id.toString());
             const card = createMemberCard(member.id, member.nama, member.fase);
-            if (item.shift === 'Shift Istirahat 1') {
-              s1.appendChild(card);
-            } else if (item.shift === 'Shift Istirahat 2' && hari !== 'Jumat') {
-              s2.appendChild(card);
-            }
+            if (item.shift === 'Shift Istirahat 1') s1.appendChild(card);
+            else if (item.shift === 'Shift Istirahat 2' && hari !== 'Jumat') s2.appendChild(card);
           }
         });
       }
 
-      renderSourceList();
+      const sourceBox = document.getElementById('source-list');
+      sourceBox.innerHTML = '';
+      membersAll.forEach(m => {
+        if (!assignedIds.has(m.id.toString())) sourceBox.appendChild(createMemberCard(m.id, m.nama, m.fase));
+      });
     }
 
-    // 7. Tambah Anggota
+    async function terbitkanJadwal() {
+      const hari = document.getElementById('select-hari').value;
+      const status = document.getElementById('status-terbit');
+      status.style.color = "#3182ce"; status.innerText = "⏳ Sedang menerbitkan...";
+
+      const shift1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
+      const shift2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
+
+      const payload = [];
+      shift1Cards.forEach(c => payload.push({ hari, member_id: c.dataset.id, shift: 'Shift Istirahat 1' }));
+      if (hari !== 'Jumat') {
+        shift2Cards.forEach(c => payload.push({ hari, member_id: c.dataset.id, shift: 'Shift Istirahat 2' }));
+      }
+
+      await supabase.from('piket_schedule').delete().eq('hari', hari);
+      if (payload.length > 0) await supabase.from('piket_schedule').insert(payload);
+
+      status.style.color = "#38a169";
+      status.innerText = `✅ Jadwal hari ${hari} berhasil diperbarui!`;
+    }
+
     async function tambahAnggota() {
       const nama = document.getElementById('nama-baru').value.trim();
       const fase = document.getElementById('fase-baru').value;
+      if (!nama) return alert("Masukkan nama siswa!");
+      await supabase.from('members').insert([{ nama, fase }]);
+      document.getElementById('nama-baru').value = '';
+      await loadMembers();
+      await loadJadwalHariIni();
+    }
 
-      if (!nama) return alert("Masukkan nama anggota!");
+    async function loadLogsAdmin() {
+      const tbody = document.getElementById('tabel-log-admin');
+      const { data: logs } = await supabase.from('piket_logs').select('*').order('id', { ascending: false });
 
-      const { error } = await supabase.from('members').insert([{ nama, fase }]);
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#a0aec0;">Belum ada laporan foto.</td></tr>';
+        return;
+      }
 
-      if (error) {
-        alert("Gagal menambah: " + error.message);
-      } else {
-        document.getElementById('nama-baru').value = '';
-        await loadMembers();
-        renderSourceList();
+      tbody.innerHTML = '';
+      logs.forEach(log => {
+        const member = membersAll.find(m => m.id.toString() === log.member_id.toString());
+        const nama = member ? member.nama : 'Anggota PMR';
+        const waktu = new Date(log.created_at || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        
+        let badgeClass = 'badge-pending';
+        if (log.status === 'ACC') badgeClass = 'badge-acc';
+        if (log.status === 'Ditolak') badgeClass = 'badge-reject';
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${waktu}</td>
+            <td><b>${nama}</b></td>
+            <td>${log.shift}</td>
+            <td><img src="${log.foto_url}" class="img-preview" onclick="zoomImg('${log.foto_url}')"></td>
+            <td><span class="badge ${badgeClass}">${log.status}</span></td>
+            <td>
+              <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="updateStatusLog(${log.id}, 'ACC')">ACC</button>
+              <button class="btn btn-red" style="padding:4px 8px; font-size:11px;" onclick="updateStatusLog(${log.id}, 'Ditolak')">Tolak</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function updateStatusLog(id, status) {
+      await supabase.from('piket_logs').update({ status }).eq('id', id);
+      loadLogsAdmin();
+    }
+
+    function zoomImg(url) {
+      document.getElementById('modalImg').src = url;
+      document.getElementById('imgModal').style.display = 'flex';
+    }
+
+    async function clearLogsHariIni() {
+      if (confirm("Kosongkan seluruh log bukti foto?")) {
+        await supabase.from('piket_logs').delete().neq('id', 0);
+        loadLogsAdmin();
       }
     }
 
-    // Deteksi Hari Ini
+    async function exportDataLog() {
+      const { data: logs } = await supabase.from('piket_logs').select('*');
+      if (!logs) return alert("Data kosong!");
+      let csv = "Waktu,Nama,Shift,Status,Foto URL\n";
+      logs.forEach(l => {
+        const m = membersAll.find(x => x.id.toString() === l.member_id.toString());
+        csv += `"${new Date(l.created_at).toLocaleString('id-ID')}","${m ? m.nama : ''}","${l.shift}","${l.status}","${l.foto_url}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `Rekap_Piket.csv`; a.click();
+    }
+
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     if (document.querySelector(`#select-hari option[value="${today}"]`)) {
       document.getElementById('select-hari').value = today;
     }
-
-    init();
   </script>
 </body>
 </html>

@@ -47,7 +47,7 @@
     .time-widget { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 14px; border-radius: 12px; display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; }
 
     .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7; margin-bottom: 20px; }
-    .card h2 { font-size: 15px; color: #2b6cb0; margin-bottom: 12px; font-weight: 700; }
+    .card h2 { font-size: 15px; color: #2b6cb0; margin-bottom: 0; font-weight: 700; }
     
     .table-responsive { overflow-x: auto; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -75,6 +75,10 @@
     .btn-submit { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%); color: white; font-weight: 700; font-size: 14px; cursor: pointer; }
     .btn-submit:disabled { background: #cbd5e0; cursor: not-allowed; }
     .expired-banner { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; font-weight: bold; margin-bottom: 12px; }
+    
+    /* Tombol Refresh Tabel */
+    .btn-refresh { background: #edf2f7; border: 1px solid #cbd5e0; color: #4a5568; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s; }
+    .btn-refresh:hover { background: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -100,15 +104,18 @@
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h2>📅 Jadwal Piket Harian</h2>
-        <select id="filter-hari" class="form-control" style="width: auto; padding: 4px 8px;" onchange="loadScheduleSiswa()">
-          <option value="Senin">Senin</option>
-          <option value="Selasa">Selasa</option>
-          <option value="Rabu">Rabu</option>
-          <option value="Kamis">Kamis</option>
-          <option value="Jumat">Jumat</option>
-          <option value="Sabtu">Sabtu</option>
-          <option value="Minggu">Minggu</option>
-        </select>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn-refresh" onclick="loadScheduleSiswa()">🔄 Refresh</button>
+          <select id="filter-hari" class="form-control" style="width: auto; padding: 4px 8px;" onchange="loadScheduleSiswa()">
+            <option value="Senin">Senin</option>
+            <option value="Selasa">Selasa</option>
+            <option value="Rabu">Rabu</option>
+            <option value="Kamis">Kamis</option>
+            <option value="Jumat">Jumat</option>
+            <option value="Sabtu">Sabtu</option>
+            <option value="Minggu">Minggu</option>
+          </select>
+        </div>
       </div>
 
       <!-- TABEL SHIFT 1 -->
@@ -154,6 +161,11 @@
       
       <div id="expired-notice" class="expired-banner" style="display: none;">
         ⚠️ Batas pengiriman laporan foto hari ini telah ditutup (Sistem Expired jam <span id="text-expired-time">15:30</span> WIB).
+      </div>
+      
+      <!-- INFO HITUNG MUNDUR WAKTU SEBELUM TUTUP -->
+      <div id="countdown-banner" style="font-size: 12px; color: #4a5568; background: #edf2f7; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; font-weight: 600;">
+        ⏳ Sisa waktu pengiriman laporan: <span id="countdown-text" style="color: #2b6cb0;">--:--:--</span>
       </div>
 
       <form id="form-upload">
@@ -220,19 +232,46 @@
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
       document.getElementById('current-time').innerText = `${hours}:${minutes}:${seconds} WIB`;
+
+      checkExpiredAndCountdown(now);
     }
 
-    function checkExpired() {
-      const now = new Date();
+    function checkExpiredAndCountdown(now) {
       const currentHour = now.getHours();
       const currentMin = now.getMinutes();
+      const currentSec = now.getSeconds();
 
       const [expHour, expMin] = customExpiredTime.split(':').map(Number);
       document.getElementById('text-expired-time').innerText = customExpiredTime;
 
-      if (currentHour > expHour || (currentHour === expHour && currentMin >= expMin)) { 
-        document.getElementById('expired-notice').style.display = 'block';
-        document.getElementById('btn-submit').disabled = true;
+      // Buat objek waktu target expired hari ini
+      const targetTime = new Date(now);
+      targetTime.setHours(expHour, expMin, 0, 0);
+
+      const diffMs = targetTime - now;
+
+      const expiredNotice = document.getElementById('expired-notice');
+      const countdownBanner = document.getElementById('countdown-banner');
+      const btnSubmit = document.getElementById('btn-submit');
+
+      if (diffMs <= 0) {
+        // Sudah Expired
+        expiredNotice.style.display = 'block';
+        countdownBanner.style.display = 'none';
+        btnSubmit.disabled = true;
+      } else {
+        // Belum Expired (Hitung Mundur)
+        expiredNotice.style.display = 'none';
+        countdownBanner.style.display = 'block';
+        btnSubmit.disabled = false;
+
+        const diffSecs = Math.floor(diffMs / 1000);
+        const h = Math.floor(diffSecs / 3600);
+        const m = Math.floor((diffSecs % 3600) / 60);
+        const s = diffSecs % 60;
+
+        document.getElementById('countdown-text').innerText = 
+          `${String(h).padStart(2, '0')} jam ${String(m).padStart(2, '0')} menit ${String(s).padStart(2, '0')} detik`;
       }
     }
 
@@ -301,8 +340,8 @@
             const statusLog = logMap[m.id];
             
             let statusBadge = '<span class="badge status-belum"><span class="status-dot dot-red"></span> Belum Piket</span>';
-            if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending"><span class="status-dot dot-yellow"></span> Menunggu ACC</span>';
-            if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc"><span class="status-dot dot-green"></span> Sudah ACC</span>';
+            if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending"><span class="status-dot dot-yellow"></span> Menunggu Konfirmasi</span>';
+            if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc"><span class="status-dot dot-green"></span> Sudah Piket</span>';
 
             const rowHtml = `
               <tr>
@@ -378,7 +417,7 @@
       }]);
 
       statusPesan.style.color = "#38a169";
-      statusPesan.innerText = "✅ Laporan piket berhasil dikirim! Menunggu ACC Admin.";
+      statusPesan.innerText = "✅ Laporan piket berhasil dikirim! Menunggu Konfirmasi Admin.";
       document.getElementById('form-upload').reset();
       document.getElementById('img-preview').style.display = 'none';
       loadScheduleSiswa();
@@ -392,7 +431,6 @@
     updateRealtimeClock();
 
     loadAnnouncement();
-    checkExpired();
     loadScheduleSiswa();
   </script>
 </body>

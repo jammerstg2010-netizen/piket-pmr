@@ -15,15 +15,25 @@
     .header-card p { font-size: 12px; opacity: 0.9; }
     .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7; margin-bottom: 20px; }
     .card h2 { font-size: 15px; color: #2b6cb0; margin-bottom: 12px; font-weight: 700; }
-    .table-responsive { overflow-x: auto; }
+    
+    .table-responsive { overflow-x: auto; margin-bottom: 15px; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { background: #f7fafc; color: #718096; padding: 10px; font-size: 11px; text-transform: uppercase; }
     td { padding: 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; }
-    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+    
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
     .badge-fase { background: #ebf8ff; color: #2b6cb0; }
+    
+    /* Style Status dengan Bulatan Indikator Warna */
     .status-belum { background: #fff5f5; color: #e53e3e; }
     .status-acc { background: #c6f6d5; color: #22543d; }
     .status-pending { background: #feebc8; color: #c05621; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-red { background-color: #e53e3e; box-shadow: 0 0 5px rgba(229, 62, 62, 0.6); }
+    .dot-green { background-color: #38a169; box-shadow: 0 0 5px rgba(56, 161, 105, 0.6); }
+    .dot-yellow { background-color: #dd6b20; box-shadow: 0 0 5px rgba(221, 107, 32, 0.6); }
+
+    .shift-title { font-size: 13px; font-weight: 700; color: #4a5568; margin: 10px 0 6px 0; display: flex; align-items: center; gap: 6px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #4a5568; }
     .form-control { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; outline: none; }
@@ -57,20 +67,40 @@
         </select>
       </div>
 
+      <!-- TABEL ISTIRAHAT 1 -->
+      <div class="shift-title">⏰ Shift Istirahat 1</div>
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
               <th>Nama Petugas</th>
               <th>Fase</th>
-              <th>Shift</th>
               <th>Status</th>
             </tr>
           </thead>
-          <tbody id="tabel-piket">
-            <tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>
+          <tbody id="tabel-shift-1">
+            <tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- TABEL ISTIRAHAT 2 -->
+      <div id="container-shift-2">
+        <div class="shift-title">⏰ Shift Istirahat 2</div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama Petugas</th>
+                <th>Fase</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tabel-shift-2">
+              <tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -111,7 +141,6 @@
   </div>
 
   <script>
-    // Penanganan Inisialisasi Supabase Aman (Bebas 'already been declared')
     if (typeof supabaseClient === 'undefined') {
       const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
       const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
@@ -141,14 +170,23 @@
 
     async function loadScheduleSiswa() {
       const hari = document.getElementById('filter-hari').value;
-      const tbody = document.getElementById('tabel-piket');
+      const tbody1 = document.getElementById('tabel-shift-1');
+      const tbody2 = document.getElementById('tabel-shift-2');
+      const containerShift2 = document.getElementById('container-shift-2');
       const selectMember = document.getElementById('select-member');
 
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
+      tbody1.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
+      tbody2.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
+      // Atur Tampilan Khusus Hari Jumat (Hanya 1 Shift)
+      if (hari === 'Jumat') {
+        containerShift2.style.display = 'none';
+      } else {
+        containerShift2.style.display = 'block';
+      }
+
       try {
-        // 1. Ambil Data Members
         const { data: membersData, error: memErr } = await db.from('members').select('*');
         if (memErr) throw memErr;
 
@@ -157,14 +195,12 @@
           membersData.forEach(m => { memberMap[m.id] = m; });
         }
 
-        // 2. Ambil Data Logs
         const { data: logs } = await db.from('piket_logs').select('*');
         const logMap = {};
         if (logs && Array.isArray(logs)) {
           logs.forEach(l => { if(l.member_id) logMap[l.member_id] = l.status; });
         }
 
-        // 3. Ambil Data Schedule
         const { data: scheduleData, error: schedErr } = await db
           .from('piket_schedule')
           .select('*')
@@ -173,39 +209,54 @@
         if (schedErr) throw schedErr;
 
         if (!scheduleData || scheduleData.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #a0aec0;">Belum ada jadwal piket hari ${hari}</td></tr>`;
+          tbody1.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Belum ada jadwal hari ${hari}</td></tr>`;
+          tbody2.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Belum ada jadwal hari ${hari}</td></tr>`;
           return;
         }
 
         currentSchedule = scheduleData;
-        tbody.innerHTML = '';
+        
+        let countShift1 = 0;
+        let countShift2 = 0;
+        let html1 = '';
+        let html2 = '';
 
-        // 4. Render Hasil ke Tabel
         scheduleData.forEach(item => {
           const m = memberMap[item.member_id];
           if (m) {
             const statusLog = logMap[m.id];
-            let statusBadge = '<span class="badge status-belum">Belum Piket</span>';
+            
+            // Badge Status dengan Bulatan Warna
+            let statusBadge = '<span class="badge status-belum"><span class="status-dot dot-red"></span> Belum Piket</span>';
+            if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending"><span class="status-dot dot-yellow"></span> Menunggu ACC</span>';
+            if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc"><span class="status-dot dot-green"></span> Sudah ACC</span>';
 
-            if (statusLog === 'Pending') statusBadge = '<span class="badge status-pending">Menunggu ACC</span>';
-            if (statusLog === 'ACC') statusBadge = '<span class="badge status-acc">Sudah ACC</span>';
-
-            tbody.innerHTML += `
+            const rowHtml = `
               <tr>
                 <td><b>${m.nama}</b></td>
                 <td><span class="badge badge-fase">Fase ${m.fase}</span></td>
-                <td>${item.shift}</td>
                 <td>${statusBadge}</td>
               </tr>
             `;
+
+            if (item.shift === 'Shift Istirahat 1') {
+              html1 += rowHtml;
+              countShift1++;
+            } else if (item.shift === 'Shift Istirahat 2') {
+              html2 += rowHtml;
+              countShift2++;
+            }
 
             selectMember.innerHTML += `<option value="${m.id}">${m.nama}</option>`;
           }
         });
 
+        tbody1.innerHTML = html1 || '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Tidak ada petugas.</td></tr>';
+        tbody2.innerHTML = html2 || '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Tidak ada petugas.</td></tr>';
+
       } catch (err) {
         console.error("Detail Error:", err);
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #e53e3e;">Gagal memuat data. Cek Console F12.</td></tr>`;
+        tbody1.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #e53e3e;">Gagal memuat data.</td></tr>`;
       }
     }
 
@@ -262,7 +313,6 @@
       loadScheduleSiswa();
     });
 
-    // Otomatis tentukan hari ini di dropdown
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     document.getElementById('filter-hari').value = today;

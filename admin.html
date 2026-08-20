@@ -100,14 +100,14 @@
     .btn-delete-member:hover { color: #9b2c2c; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; text-align: left; }
     .img-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; cursor: pointer; }
 
-    /* Tombol Refresh Khusus Admin */
     .btn-refresh { background: #edf2f7; border: 1px solid #cbd5e0; color: #4a5568; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s; }
     .btn-refresh:hover { background: #e2e8f0; }
   </style>
@@ -132,23 +132,31 @@
   <div class="container" id="admin-content" style="display: none;">
     <div class="header-card">
       <h1>🚑 Panel Admin Piket UKS PMR</h1>
-      <p>Kelola Shift Harian, Pengumuman & Validasi Laporan Bukti Foto</p>
+      <p>Kelola Shift Harian, Durasi Waktu, Pengumuman & Validasi Laporan</p>
     </div>
 
-    <!-- PENGATURAN SISTEM (EXPIRED & ANNOUNCEMENT) -->
+    <!-- PENGATURAN SISTEM & JAM EXPIRED SHIFT -->
     <div class="card">
-      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">⚙️ Pengaturan Jam Expired & Running Text</h3>
-      <div class="grid-2">
+      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">⚙️ Pengaturan Jam Expired & Durasi Shift</h3>
+      
+      <div class="grid-3" style="margin-bottom: 12px;">
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">⏰ Batas Jam Expired Absen:</label>
-          <input type="time" id="input-expired-time" class="form-control" value="15:30">
+          <label style="font-size: 11px; font-weight: bold; color: #4a5568;">⏰ Expired Shift 1 (Umum):</label>
+          <input type="time" id="input-exp-s1" class="form-control" value="09:50">
         </div>
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: #4a5568;">📢 Running Text Pengumuman:</label>
-          <input type="text" id="input-announcement" class="form-control" placeholder="Contoh: Utamakan kerapihan saat bertugas di UKS!">
+          <label style="font-size: 11px; font-weight: bold; color: #4a5568;">⏰ Expired Shift 2 (Umum):</label>
+          <input type="time" id="input-exp-s2" class="form-control" value="13:00">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: #4a5568;">📢 Running Text:</label>
+          <input type="text" id="input-announcement" class="form-control" placeholder="Pengumuman...">
         </div>
       </div>
-      <button type="button" class="btn btn-blue" onclick="simpanPengaturanSistem()">💾 Simpan Pengaturan Sistem</button>
+      
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-blue" onclick="simpanPengaturanSistem()">💾 Simpan Pengaturan Sistem</button>
+      </div>
       <div id="status-config" style="margin-top: 8px; font-size: 12px; font-weight: bold; text-align: center;"></div>
     </div>
 
@@ -171,13 +179,18 @@
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="font-size:15px; color:#2b6cb0;">📌 Susun Shift Pertugasan</h3>
-        <select id="select-hari" class="form-control" style="width: auto; margin-bottom:0;" onchange="loadJadwalHariIni()">
+        <select id="select-hari" class="form-control" style="width: auto; margin-bottom:0;" onchange="handleGantiHari()">
           <option value="Senin">Senin</option>
           <option value="Selasa">Selasa</option>
           <option value="Rabu">Rabu</option>
           <option value="Kamis">Kamis</option>
           <option value="Jumat">Jumat</option>
         </select>
+      </div>
+
+      <!-- Keterangan Jam Shift Berdasarkan Hari -->
+      <div id="info-jam-shift" style="background: #edf2f7; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 14px; font-weight: 600; color: #2c5282;">
+        ℹ️ Jadwal Shift Hari Ini: Istirahat 1 (09:05 - 09:35) | Istirahat 2 (12:15 - 13:00)
       </div>
 
       <div class="drag-grid">
@@ -193,12 +206,12 @@
         <!-- KOLOM KANAN -->
         <div>
           <div>
-            <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
+            <label id="label-shift-1" style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
             <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
           </div>
           
           <div id="container-shift-2" style="margin-top: 14px;">
-            <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
+            <label id="label-shift-2" style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
             <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
           </div>
         </div>
@@ -217,7 +230,6 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h3 style="font-size:15px; color:#2b6cb0;">📸 Validasi Absen Bukti Foto</h3>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <!-- TOMBOL REFRESH TABEL FOTO -->
           <button class="btn-refresh" onclick="loadLogsAdmin()">🔄 Refresh</button>
           <button class="btn btn-darkred" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="resetSemuaLogFoto()">⚠️ Reset Log</button>
         </div>
@@ -279,24 +291,29 @@
     }
 
     function loadConfigTersimpan() {
-      const expTime = localStorage.getItem('piket_expired_time') || "15:30";
+      const expS1 = localStorage.getItem('piket_exp_s1') || "09:50";
+      const expS2 = localStorage.getItem('piket_exp_s2') || "13:00";
       const runningText = localStorage.getItem('piket_announcement') || "Selamat bertugas untuk tim piket hari ini! Jaga kebersihan ruang UKS.";
-      document.getElementById('input-expired-time').value = expTime;
+      
+      document.getElementById('input-exp-s1').value = expS1;
+      document.getElementById('input-exp-s2').value = expS2;
       document.getElementById('input-announcement').value = runningText;
     }
 
     function simpanPengaturanSistem() {
-      const expTime = document.getElementById('input-expired-time').value;
+      const expS1 = document.getElementById('input-exp-s1').value;
+      const expS2 = document.getElementById('input-exp-s2').value;
       const runningText = document.getElementById('input-announcement').value.trim();
 
-      if (!expTime) return alert("Pilih jam expired!");
+      if (!expS1 || !expS2) return alert("Lengkapi jam expired shift!");
 
-      localStorage.setItem('piket_expired_time', expTime);
+      localStorage.setItem('piket_exp_s1', expS1);
+      localStorage.setItem('piket_exp_s2', expS2);
       localStorage.setItem('piket_announcement', runningText);
 
       const status = document.getElementById('status-config');
       status.style.color = "#38a169";
-      status.innerText = "✅ Jam Expired & Pengumuman berhasil disimpan!";
+      status.innerText = "✅ Pengaturan sistem berhasil disimpan!";
       setTimeout(() => { status.innerText = ""; }, 3000);
     }
 
@@ -342,6 +359,24 @@
           document.getElementById('source-fase-f').appendChild(card);
         }
       }
+    }
+
+    function handleGantiHari() {
+      const hari = document.getElementById('select-hari').value;
+      const infoBox = document.getElementById('info-jam-shift');
+      const containerS2 = document.getElementById('container-shift-2');
+
+      if (hari === 'Senin') {
+        infoBox.innerHTML = "ℹ️ Jadwal Shift Senin: Istirahat 1 (09:05 - 09:35) | Istirahat 2 (12:15 - 13:00)";
+        containerS2.style.display = 'block';
+      } else if (hari === 'Selasa' || hari === 'Rabu' || hari === 'Kamis') {
+        infoBox.innerHTML = `ℹ️ Jadwal Shift ${hari}: Istirahat 1 (09:20 - 09:50) | Istirahat 2 (11:50 - 12:50)`;
+        containerS2.style.display = 'block';
+      } else if (hari === 'Jumat') {
+        infoBox.innerHTML = "ℹ️ Jadwal Shift Jumat: Istirahat 1 (09:00 - 09:40) — Hanya 1 Shift";
+        containerS2.style.display = 'none';
+      }
+      loadJadwalHariIni();
     }
 
     async function loadJadwalHariIni() {
@@ -445,7 +480,7 @@
         return;
       }
 
-      tbody.innerHTML = '';
+,      tbody.innerHTML = '';
       logs.forEach(log => {
         const member = membersAll.find(m => m.id.toString() === log.member_id.toString());
         const nama = member ? member.nama : 'Anggota PMR';

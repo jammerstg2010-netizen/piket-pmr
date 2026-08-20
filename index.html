@@ -116,7 +116,6 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const BUCKET_NAME = "piket-buktifoto"; 
-
     let currentSchedule = [];
 
     function checkExpired() {
@@ -145,17 +144,26 @@
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
       try {
-        // Fetch log status (Aman dari error null)
+        // 1. Ambil Data Anggota
+        const { data: membersData, error: memErr } = await supabase.from('members').select('*');
+        if (memErr) throw memErr;
+
+        const memberMap = {};
+        if (membersData) {
+          membersData.forEach(m => { memberMap[m.id] = m; });
+        }
+
+        // 2. Ambil Data Logs
         const { data: logs } = await supabase.from('piket_logs').select('*');
         const logMap = {};
         if (logs && Array.isArray(logs)) {
           logs.forEach(l => { if(l.member_id) logMap[l.member_id] = l.status; });
         }
 
-        // Fetch jadwal piket
+        // 3. Ambil Jadwal Sesuai Hari Dropdown
         const { data: scheduleData, error: schedErr } = await supabase
           .from('piket_schedule')
-          .select('*, members(id, nama, fase)')
+          .select('*')
           .eq('hari', hari);
 
         if (schedErr) throw schedErr;
@@ -168,9 +176,10 @@
         currentSchedule = scheduleData;
         tbody.innerHTML = '';
 
+        // 4. Render ke Tabel
         scheduleData.forEach(item => {
-          if (item.members) {
-            const m = item.members;
+          const m = memberMap[item.member_id];
+          if (m) {
             const statusLog = logMap[m.id];
             let statusBadge = '<span class="badge status-belum">Belum Piket</span>';
 
@@ -191,8 +200,8 @@
         });
 
       } catch (err) {
-        console.error("Error memuat jadwal:", err);
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #e53e3e;">Gagal mengambil data dari Supabase. Cek Console (F12).</td></tr>`;
+        console.error("Detail Error:", err);
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #e53e3e;">Gagal memuat data. Tekan F12 untuk cek Console.</td></tr>`;
       }
     }
 
@@ -207,8 +216,7 @@
     document.getElementById('form-upload').addEventListener('submit', async (e) => {
       e.preventDefault();
       const statusPesan = document.getElementById('pesan-status');
-      statusPesan.style.color = "#3182ce"; 
-      statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
+      statusPesan.style.color = "#3182ce"; statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
 
       const memberId = document.getElementById('select-member').value;
       const shift = document.getElementById('select-shift').value;
@@ -227,7 +235,7 @@
       if (uploadErr) {
         console.error(uploadErr);
         statusPesan.style.color = "#e53e3e";
-        statusPesan.innerText = `❌ Gagal upload foto. Pastikan Bucket '${BUCKET_NAME}' sudah Public!`;
+        statusPesan.innerText = `❌ Gagal upload foto. Pastikan Bucket '${BUCKET_NAME}' di Supabase sudah Public!`;
         return;
       }
 
@@ -248,7 +256,7 @@
       loadScheduleSiswa();
     });
 
-    // SET DROPDOWN KE HARI INI
+    // Otomatis pilih hari ini di dropdown
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     document.getElementById('filter-hari').value = today;

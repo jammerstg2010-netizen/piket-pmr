@@ -56,6 +56,7 @@
     
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
     .badge-fase { background: #ebf8ff; color: #2b6cb0; }
+    .badge-shift-info { font-size: 11px; font-weight: 600; color: #718096; background: #edf2f7; padding: 2px 6px; border-radius: 4px; margin-left: auto; }
     
     /* Style Status Bulatan */
     .status-belum { background: #fff5f5; color: #e53e3e; }
@@ -71,10 +72,17 @@
     .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #4a5568; }
     .form-control { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white; outline: none; }
     .form-control:focus { border-color: #3182ce; }
-    .preview-box { width: 100%; max-height: 180px; border-radius: 10px; object-fit: cover; margin-top: 8px; display: none; border: 1px solid #cbd5e0; }
+    .form-control:disabled { background: #edf2f7; cursor: not-allowed; color: #a0aec0; }
+    
+    .preview-container { position: relative; margin-top: 8px; display: none; }
+    .preview-box { width: 100%; max-height: 180px; border-radius: 10px; object-fit: cover; border: 1px solid #cbd5e0; display: block; }
+    .btn-cancel-foto { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
     .btn-submit { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%); color: white; font-weight: 700; font-size: 14px; cursor: pointer; }
     .btn-submit:disabled { background: #cbd5e0; cursor: not-allowed; }
+    
     .expired-banner { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; font-weight: bold; margin-bottom: 12px; }
+    .lockdown-banner { background: #fffaf0; border: 1px solid #fbd38d; color: #9c4221; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; font-weight: bold; margin-bottom: 12px; }
     
     /* Tombol Refresh Tabel */
     .btn-refresh { background: #edf2f7; border: 1px solid #cbd5e0; color: #4a5568; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s; }
@@ -119,7 +127,10 @@
       </div>
 
       <!-- TABEL SHIFT 1 -->
-      <div class="shift-title">⏰ Shift Istirahat 1</div>
+      <div class="shift-title">
+        <span>⏰ Shift Istirahat 1</span>
+        <span class="badge-shift-info" id="info-durasi-shift-1">Durasi: 09:30 - 10:00 (Custom)</span>
+      </div>
       <div class="table-responsive">
         <table>
           <thead>
@@ -137,7 +148,10 @@
 
       <!-- TABEL SHIFT 2 -->
       <div id="container-shift-2">
-        <div class="shift-title">⏰ Shift Istirahat 2</div>
+        <div class="shift-title">
+          <span>⏰ Shift Istirahat 2</span>
+          <span class="badge-shift-info" id="info-durasi-shift-2">Durasi: 12:00 - 12:30 (Custom)</span>
+        </div>
         <div class="table-responsive">
           <table>
             <thead>
@@ -162,6 +176,10 @@
       <div id="expired-notice" class="expired-banner" style="display: none;">
         ⚠️ Batas pengiriman laporan foto hari ini telah ditutup (Sistem Expired jam <span id="text-expired-time">15:30</span> WIB).
       </div>
+
+      <div id="lockdown-notice" class="lockdown-banner" style="display: none;">
+        🔒 Dropdown terkunci. Belum memasuki durasi shift piket yang ditentukan.
+      </div>
       
       <!-- INFO HITUNG MUNDUR WAKTU SEBELUM TUTUP -->
       <div id="countdown-banner" style="font-size: 12px; color: #4a5568; background: #edf2f7; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; font-weight: 600;">
@@ -170,7 +188,7 @@
 
       <form id="form-upload">
         <div class="form-group">
-          <label>Pilih Nama Kamu (Jadwal Hari Ini):</label>
+          <label id="label-select-member">Pilih Nama Kamu (Jadwal Hari Ini):</label>
           <select id="select-member" class="form-control" required onchange="autoFillShift()">
             <option value="">-- Pilih Nama Kamu --</option>
           </select>
@@ -178,7 +196,7 @@
 
         <div class="form-group">
           <label>Shift Pertugasan:</label>
-          <select id="select-shift" class="form-control" required>
+          <select id="select-shift" class="form-control" required disabled>
             <option value="Shift Istirahat 1">Shift Istirahat 1</option>
             <option value="Shift Istirahat 2">Shift Istirahat 2</option>
           </select>
@@ -187,7 +205,12 @@
         <div class="form-group">
           <label>Foto Bukti Kegiatan Piket UKS:</label>
           <input type="file" id="input-foto" class="form-control" accept="image/*" required onchange="previewImage(event)">
-          <img id="img-preview" class="preview-box" alt="Preview Foto">
+          
+          <!-- Box Preview dengan Tombol Cancel/Reset -->
+          <div id="preview-container" class="preview-container">
+            <img id="img-preview" class="preview-box" alt="Preview Foto">
+            <button type="button" class="btn-cancel-foto" onclick="resetImage()" title="Batalkan Foto">✕</button>
+          </div>
         </div>
 
         <button type="submit" id="btn-submit" class="btn-submit">🚀 Kirim Laporan Piket</button>
@@ -207,7 +230,12 @@
     const BUCKET_NAME = "bukti-piket"; 
     let currentSchedule = [];
 
-    // Mengambil Pengaturan Expired & Running Text dari LocalStorage
+    // Pengaturan Durasi Shift & Expired (Bisa disesuaikan atau diambil dari localStorage/DB)
+    let shiftTimes = {
+      "Shift Istirahat 1": { start: "09:15", end: "10:15", label: "09:15 - 10:15 (Custom)" },
+      "Shift Istirahat 2": { start: "11:45", end: "12:45", label: "11:45 - 12:45 (Custom)" }
+    };
+
     let customExpiredTime = localStorage.getItem('piket_expired_time') || "15:30";
     let customAnnouncement = localStorage.getItem('piket_announcement') || "Selamat bertugas untuk tim piket hari ini! Jaga kebersihan ruang UKS.";
 
@@ -233,55 +261,89 @@
       const seconds = String(now.getSeconds()).padStart(2, '0');
       document.getElementById('current-time').innerText = `${hours}:${minutes}:${seconds} WIB`;
 
-      checkExpiredAndCountdown(now);
+      checkExpiredAndShiftLock(now);
     }
 
-    function checkExpiredAndCountdown(now) {
-      const currentHour = now.getHours();
-      const currentMin = now.getMinutes();
-      const currentSec = now.getSeconds();
-
+    function checkExpiredAndShiftLock(now) {
       const [expHour, expMin] = customExpiredTime.split(':').map(Number);
       document.getElementById('text-expired-time').innerText = customExpiredTime;
 
-      // Buat objek waktu target expired hari ini
       const targetTime = new Date(now);
       targetTime.setHours(expHour, expMin, 0, 0);
-
       const diffMs = targetTime - now;
 
       const expiredNotice = document.getElementById('expired-notice');
+      const lockdownNotice = document.getElementById('lockdown-notice');
       const countdownBanner = document.getElementById('countdown-banner');
       const btnSubmit = document.getElementById('btn-submit');
+      const selectMember = document.getElementById('select-member');
+      const labelMember = document.getElementById('label-select-member');
 
       if (diffMs <= 0) {
-        // Sudah Expired
+        // Sudah Expired Hari Ini
         expiredNotice.style.display = 'block';
+        lockdownNotice.style.display = 'none';
         countdownBanner.style.display = 'none';
         btnSubmit.disabled = true;
-      } else {
-        // Belum Expired (Hitung Mundur)
-        expiredNotice.style.display = 'none';
-        countdownBanner.style.display = 'block';
-        btnSubmit.disabled = false;
-
-        const diffSecs = Math.floor(diffMs / 1000);
-        const h = Math.floor(diffSecs / 3600);
-        const m = Math.floor((diffSecs % 3600) / 60);
-        const s = diffSecs % 60;
-
-        document.getElementById('countdown-text').innerText = 
-          `${String(h).padStart(2, '0')} jam ${String(m).padStart(2, '0')} menit ${String(s).padStart(2, '0')} detik`;
+        selectMember.disabled = true;
+        labelMember.innerHTML = "Pilih Nama Kamu (Jadwal Hari Ini): 🔒 (Ditutup)";
+        return;
       }
+
+      // Cek apakah waktu sekarang berada di dalam salah satu rentang shift aktif hari ini
+      const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      let isAnyShiftActive = false;
+      Object.keys(shiftTimes).forEach(shiftName => {
+        const s = shiftTimes[shiftName];
+        if (currentHM >= s.start && currentHM <= s.end) {
+          isAnyShiftActive = true;
+        }
+      });
+
+      // Aturan Lockdown Dropdown berdasarkan jam shift atau fleksibel
+      // Jika ingin dibuka sepanjang hari sebelum expired, ubah kondisi ini. Sesuai request: "batasi siswa upload hanya di jam tertentu... dropdown pake ikon kunci"
+      // Di sini kita cek apakah minimal sudah masuk jam shift pertama atau belum.
+      const firstShiftStart = shiftTimes["Shift Istirahat 1"].start;
+      const isTimeStarted = currentHM >= firstShiftStart;
+
+      if (!isTimeStarted) {
+        lockdownNotice.style.display = 'block';
+        selectMember.disabled = true;
+        btnSubmit.disabled = true;
+        labelMember.innerHTML = `Pilih Nama Kamu (Jadwal Hari Ini): 🔒 (Dibuka pukul ${firstShiftStart} WIB)`;
+      } else {
+        lockdownNotice.style.display = 'none';
+        selectMember.disabled = false;
+        btnSubmit.disabled = false;
+        labelMember.innerHTML = "Pilih Nama Kamu (Jadwal Hari Ini):";
+      }
+
+      // Hitung mundurnya
+      countdownBanner.style.display = 'block';
+      const diffSecs = Math.floor(diffMs / 1000);
+      const h = Math.floor(diffSecs / 3600);
+      const m = Math.floor((diffSecs % 3600) / 60);
+      const s = diffSecs % 60;
+
+      document.getElementById('countdown-text').innerText = 
+        `${String(h).padStart(2, '0')} jam ${String(m).padStart(2, '0')} menit ${String(s).padStart(2, '0')} detik`;
     }
 
     function previewImage(event) {
       const file = event.target.files[0];
       const preview = document.getElementById('img-preview');
+      const container = document.getElementById('preview-container');
       if (file) {
         preview.src = URL.createObjectURL(file);
-        preview.style.display = 'block';
+        container.style.display = 'block';
       }
+    }
+
+    function resetImage() {
+      document.getElementById('input-foto').value = '';
+      document.getElementById('img-preview').src = '';
+      document.getElementById('preview-container').style.display = 'none';
     }
 
     async function loadScheduleSiswa() {
@@ -294,6 +356,10 @@
       tbody1.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       tbody2.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #a0aec0;">Memuat jadwal...</td></tr>';
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
+
+      // Update info label durasi shift di UI
+      document.getElementById('info-durasi-shift-1').innerText = `Durasi: ${shiftTimes["Shift Istirahat 1"].label}`;
+      document.getElementById('info-durasi-shift-2').innerText = `Durasi: ${shiftTimes["Shift Istirahat 2"].label}`;
 
       if (hari === 'Jumat') {
         containerShift2.style.display = 'none';
@@ -419,7 +485,7 @@
       statusPesan.style.color = "#38a169";
       statusPesan.innerText = "✅ Laporan piket berhasil dikirim! Menunggu Konfirmasi Admin.";
       document.getElementById('form-upload').reset();
-      document.getElementById('img-preview').style.display = 'none';
+      resetImage();
       loadScheduleSiswa();
     });
 

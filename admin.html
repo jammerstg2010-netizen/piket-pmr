@@ -4,178 +4,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - Piket UKS PMR</title>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    
-    body {
-      background: #f4f7f6;
-      background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
-      background-size: 20px 20px;
-      min-height: 100vh;
-      padding: 20px;
-      color: #2d3748;
-    }
-
+    body { background: #f4f7f6; min-height: 100vh; padding: 20px; color: #2d3748; }
     .container { max-width: 1000px; margin: 0 auto; }
-
-    /* Login Screen */
+    
     #login-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      display: flex; justify-content: center; align-items: center; z-index: 99999;
     }
     .login-card {
-      background: white;
-      padding: 30px;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      text-align: center;
+      background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 360px; text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
-    .login-card h2 { color: #e53e3e; margin-bottom: 6px; font-size: 20px; font-weight: 800; }
-
+    .login-card h2 { color: #e53e3e; margin-bottom: 8px; font-size: 20px; font-weight: 800; }
+    
+    .form-control {
+      width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      font-size: 14px; outline: none; background: #f8fafc; margin-bottom: 12px;
+    }
+    .btn {
+      padding: 12px 16px; border: none; border-radius: 10px; font-weight: 700; font-size: 14px;
+      cursor: pointer; transition: all 0.2s; width: 100%; display: block;
+    }
+    .btn-red { background: #e53e3e; color: white; }
+    .btn-blue { background: #3182ce; color: white; }
+    .btn-green { background: #38a169; color: white; }
+    
     .header-card {
       background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
-      padding: 24px;
-      border-radius: 20px;
-      text-align: center;
-      color: white;
-      box-shadow: 0 10px 25px rgba(229, 62, 62, 0.25);
-      margin-bottom: 24px;
+      padding: 24px; border-radius: 20px; text-align: center; color: white; margin-bottom: 24px;
     }
-    .header-card h1 { font-size: 24px; font-weight: 800; }
-    .header-card p { font-size: 13px; opacity: 0.9; margin-top: 4px; }
-
-    .card {
-      background: #ffffff;
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      border: 1px solid #edf2f7;
-      margin-bottom: 24px;
-    }
-
-    .card-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #2b6cb0;
-      margin-bottom: 16px;
-    }
-
+    .card { background: white; border-radius: 18px; padding: 22px; margin-bottom: 24px; border: 1px solid #edf2f7; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    .form-control {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 13px;
-      outline: none;
-      background: #f8fafc;
-      margin-bottom: 10px;
+    .drag-box-container, .shift-target {
+      background: #f7fafc; border: 2px dashed #cbd5e0; border-radius: 12px; padding: 12px; min-height: 150px;
     }
-    .form-control:focus { border-color: #3182ce; background: #fff; }
-
-    /* Area Drag and Drop */
-    .drag-box-container {
-      background: #f7fafc;
-      border: 2px dashed #cbd5e0;
-      border-radius: 12px;
-      padding: 12px;
-      min-height: 220px;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-
-    .shift-target {
-      min-height: 100px;
-      background: #ebf8ff;
-      border: 2px dashed #90cdf4;
-      border-radius: 12px;
-      padding: 10px;
-      margin-top: 6px;
-    }
-
     .draggable-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      padding: 10px 14px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      cursor: grab;
-      font-size: 13px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      user-select: none;
+      background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 8px;
+      cursor: grab; font-size: 13px; display: flex; justify-content: space-between;
     }
-    .draggable-card:active { cursor: grabbing; opacity: 0.6; }
-
-    .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-    .badge-fase { background: #ebf8ff; color: #2b6cb0; }
-    .badge-pending { background: #feebc8; color: #c05621; }
-    .badge-acc { background: #c6f6d5; color: #22543d; }
-    .badge-reject { background: #fed7d7; color: #9b2c2c; }
-
-    .btn {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-red { background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); color: white; }
-    .btn-blue { background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%); color: white; }
-    .btn-green { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; }
-    .btn-gray { background: #e2e8f0; color: #4a5568; }
-    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-
-    .table-responsive { overflow-x: auto; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { background: #f7fafc; color: #718096; padding: 10px 12px; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #edf2f7; }
-    td { padding: 12px; font-size: 13px; border-bottom: 1px solid #edf2f7; vertical-align: middle; }
-
-    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #e2e8f0; }
-
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-    .modal img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; text-align: left; }
+    .img-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <!-- OVERLAY LOGIN ADMIN -->
+  <!-- OVERLAY LOGIN -->
   <div id="login-overlay">
     <div class="login-card">
       <h2>🔐 Login Admin UKS</h2>
-      <p style="font-size: 12px; color: #718096; margin-bottom: 16px;">Masukkan kredensial untuk mengelola jadwal</p>
-      <input type="text" id="admin-user" class="form-control" placeholder="Username Admin">
-      <input type="password" id="admin-pass" class="form-control" placeholder="Password Admin">
-      <button class="btn btn-red" style="width: 100%; margin-top: 5px;" onclick="checkLogin()">Masuk Panel Admin</button>
-      <div id="login-err" style="color: #e53e3e; font-size: 12px; margin-top: 10px; font-weight: 600;"></div>
+      <p style="font-size: 12px; color: #718096; margin-bottom: 16px;">Masukkan Username & Password</p>
+      
+      <input type="text" id="admin-user" class="form-control" placeholder="Username" autocomplete="off">
+      <input type="password" id="admin-pass" class="form-control" placeholder="Password">
+      
+      <button type="button" id="btn-login-trigger" class="btn btn-red" onclick="prosesLogin()">Masuk Panel Admin</button>
+      <div id="login-err" style="color: #e53e3e; font-size: 12px; margin-top: 12px; font-weight: bold;"></div>
     </div>
   </div>
 
+  <!-- ISI DASHBOARD ADMIN -->
   <div class="container" id="admin-content" style="display: none;">
     <div class="header-card">
       <h1>🚑 Panel Admin Piket UKS PMR</h1>
       <p>Kelola Shift Harian & Validasi Laporan Bukti Foto</p>
     </div>
 
-    <!-- TAMBAH ANGGOTA BARU -->
     <div class="card">
-      <div class="card-title">➕ Tambah Anggota PMR</div>
+      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">➕ Tambah Anggota PMR</h3>
       <div class="grid-2">
         <input type="text" id="nama-baru" class="form-control" placeholder="Nama Lengkap Siswa..." style="margin-bottom:0;">
         <div style="display: flex; gap: 8px;">
@@ -188,103 +92,90 @@
       </div>
     </div>
 
-    <!-- PANEL DRAG AND DROP JADWAL -->
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-        <div class="card-title" style="margin-bottom:0;">📌 Susun Shift Pertugasan</div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-size: 12px; font-weight: bold;">Pilih Hari:</label>
-          <select id="select-hari" class="form-control" style="width: auto; margin-bottom:0;" onchange="loadJadwalHariIni()">
-            <option value="Senin">Senin</option>
-            <option value="Selasa">Selasa</option>
-            <option value="Rabu">Rabu</option>
-            <option value="Kamis">Kamis</option>
-            <option value="Jumat">Jumat</option>
-          </select>
-        </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size:15px; color:#2b6cb0;">📌 Susun Shift Pertugasan</h3>
+        <select id="select-hari" class="form-control" style="width: auto; margin-bottom:0;" onchange="loadJadwalHariIni()">
+          <option value="Senin">Senin</option>
+          <option value="Selasa">Selasa</option>
+          <option value="Rabu">Rabu</option>
+          <option value="Kamis">Kamis</option>
+          <option value="Jumat">Jumat</option>
+        </select>
       </div>
 
       <div class="grid-2">
         <div>
-          <label style="font-size: 12px; font-weight: 700; color: #4a5568;">📇 Anggota Belum Dijadwalkan:</label>
-          <div id="source-list" class="drag-box-container" style="margin-top: 6px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)"></div>
+          <label style="font-size: 12px; font-weight: bold;">📇 Anggota Belum Dijadwalkan:</label>
+          <div id="source-list" class="drag-box-container" style="margin-top:6px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)"></div>
         </div>
-
         <div>
-          <label style="font-size: 12px; font-weight: 700; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
+          <label style="font-size: 12px; font-weight: bold;">⏰ Shift Istirahat 1:</label>
           <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
-
+          
           <div id="container-shift-2" style="margin-top: 12px;">
-            <label style="font-size: 12px; font-weight: 700; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
+            <label style="font-size: 12px; font-weight: bold;">⏰ Shift Istirahat 2:</label>
             <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
           </div>
-          <div id="notice-jumat" style="display:none; margin-top:8px; font-size:11px; color:#e53e3e; font-weight:bold;">
-            ⚠️ Hari Jumat hanya tersedia Shift Istirahat 1.
-          </div>
         </div>
       </div>
-
-      <button type="button" class="btn btn-red" style="width: 100%; margin-top: 20px;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
-      <div id="status-terbit" style="margin-top: 10px; font-size: 13px; font-weight: bold; text-align: center;"></div>
+      <button type="button" class="btn btn-red" style="margin-top: 16px;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
+      <div id="status-terbit" style="margin-top: 10px; font-size: 13px; text-align: center; font-weight: bold;"></div>
     </div>
 
-    <!-- REKAP FOTO & ACC -->
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-        <div class="card-title" style="margin-bottom:0;">📸 Validasi Absen Bukti Foto</div>
-        <div style="display:flex; gap:8px;">
-          <button type="button" class="btn btn-green" onclick="exportDataLog()">📥 Export CSV</button>
-          <button type="button" class="btn btn-gray" onclick="clearLogsHariIni()">🧹 Bersihkan Log</button>
-        </div>
-      </div>
-
+      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">📸 Validasi Absen Bukti Foto</h3>
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
               <th>Waktu</th>
-              <th>Nama Petugas</th>
+              <th>Nama</th>
               <th>Shift</th>
-              <th>Bukti Foto</th>
+              <th>Foto</th>
               <th>Status</th>
-              <th>Aksi Admin</th>
+              <th>Aksi</th>
             </tr>
           </thead>
           <tbody id="tabel-log-admin">
-            <tr><td colspan="6" style="text-align:center; color:#a0aec0;">Memuat data...</td></tr>
+            <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <div id="imgModal" class="modal" onclick="this.style.display='none'">
-    <img id="modalImg" src="" alt="Bukti Piket Full">
-  </div>
-
   <script>
-    const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // LOGIKA LOGIN MURNI JS (TIDAK BERGANTUNG SUPABASE)
+    function prosesLogin() {
+      const u = document.getElementById('admin-user').value.trim();
+      const p = document.getElementById('admin-pass').value.trim();
 
-    let membersAll = [];
-
-    function checkLogin() {
-      const u = document.getElementById('admin-user').value;
-      const p = document.getElementById('admin-pass').value;
       if (u === 'adminpmr' && p === 'piketuks2026') {
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('admin-content').style.display = 'block';
-        init();
+        initApp();
       } else {
-        document.getElementById('login-err').innerText = '❌ Username atau Password Salah!';
+        document.getElementById('login-err').innerText = '❌ Username / Password Salah!';
       }
     }
 
-    async function init() {
-      await loadMembers();
-      await loadJadwalHariIni();
-      await loadLogsAdmin();
+    // SUPABASE INTEGRATION
+    const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
+    let supabase, membersAll = [];
+
+    async function initApp() {
+      try {
+        if (window.supabase) {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          await loadMembers();
+          await loadJadwalHariIni();
+          await loadLogsAdmin();
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     async function loadMembers() {
@@ -299,23 +190,16 @@
       div.id = `member-${id}`;
       div.dataset.id = id;
       div.ondragstart = (e) => e.dataTransfer.setData("text/plain", id);
-      div.innerHTML = `<span><b>${nama}</b></span><span class="badge badge-fase">Fase ${fase}</span>`;
+      div.innerHTML = `<span><b>${nama}</b></span><span style="color:#3182ce; font-weight:bold;">Fase ${fase}</span>`;
       return div;
     }
 
     function allowDrop(e) { e.preventDefault(); }
-
     function drop(e, targetZone) {
       e.preventDefault();
-      const hari = document.getElementById('select-hari').value;
       const id = e.dataTransfer.getData("text/plain");
       const card = document.getElementById(`member-${id}`);
       if (!card) return;
-
-      if (hari === 'Jumat' && targetZone === 'Shift Istirahat 2') {
-        alert("⚠️ Hari Jumat tidak ada Shift Istirahat 2!");
-        return;
-      }
 
       if (targetZone === 'Shift Istirahat 1') document.getElementById('target-shift-1').appendChild(card);
       else if (targetZone === 'Shift Istirahat 2') document.getElementById('target-shift-2').appendChild(card);
@@ -330,10 +214,8 @@
 
       if (hari === 'Jumat') {
         document.getElementById('container-shift-2').style.display = 'none';
-        document.getElementById('notice-jumat').style.display = 'block';
       } else {
         document.getElementById('container-shift-2').style.display = 'block';
-        document.getElementById('notice-jumat').style.display = 'none';
       }
 
       const { data } = await supabase.from('piket_schedule').select('*').eq('hari', hari);
@@ -376,13 +258,13 @@
       if (payload.length > 0) await supabase.from('piket_schedule').insert(payload);
 
       status.style.color = "#38a169";
-      status.innerText = `✅ Jadwal hari ${hari} berhasil diperbarui!`;
+      status.innerText = `✅ Jadwal ${hari} berhasil terbit!`;
     }
 
     async function tambahAnggota() {
       const nama = document.getElementById('nama-baru').value.trim();
       const fase = document.getElementById('fase-baru').value;
-      if (!nama) return alert("Masukkan nama siswa!");
+      if (!nama) return alert("Masukkan nama!");
       await supabase.from('members').insert([{ nama, fase }]);
       document.getElementById('nama-baru').value = '';
       await loadMembers();
@@ -394,7 +276,7 @@
       const { data: logs } = await supabase.from('piket_logs').select('*').order('id', { ascending: false });
 
       if (!logs || logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#a0aec0;">Belum ada laporan foto.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada laporan foto.</td></tr>';
         return;
       }
 
@@ -403,21 +285,17 @@
         const member = membersAll.find(m => m.id.toString() === log.member_id.toString());
         const nama = member ? member.nama : 'Anggota PMR';
         const waktu = new Date(log.created_at || Date.now()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        
-        let badgeClass = 'badge-pending';
-        if (log.status === 'ACC') badgeClass = 'badge-acc';
-        if (log.status === 'Ditolak') badgeClass = 'badge-reject';
 
         tbody.innerHTML += `
           <tr>
             <td>${waktu}</td>
             <td><b>${nama}</b></td>
             <td>${log.shift}</td>
-            <td><img src="${log.foto_url}" class="img-preview" onclick="zoomImg('${log.foto_url}')"></td>
-            <td><span class="badge ${badgeClass}">${log.status}</span></td>
+            <td><a href="${log.foto_url}" target="_blank"><img src="${log.foto_url}" class="img-preview"></a></td>
+            <td><b>${log.status}</b></td>
             <td>
-              <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="updateStatusLog(${log.id}, 'ACC')">ACC</button>
-              <button class="btn btn-red" style="padding:4px 8px; font-size:11px;" onclick="updateStatusLog(${log.id}, 'Ditolak')">Tolak</button>
+              <button class="btn btn-green" style="padding:4px 8px; font-size:11px; width:auto;" onclick="updateStatusLog(${log.id}, 'ACC')">ACC</button>
+              <button class="btn btn-red" style="padding:4px 8px; font-size:11px; width:auto;" onclick="updateStatusLog(${log.id}, 'Ditolak')">Tolak</button>
             </td>
           </tr>
         `;
@@ -427,37 +305,6 @@
     async function updateStatusLog(id, status) {
       await supabase.from('piket_logs').update({ status }).eq('id', id);
       loadLogsAdmin();
-    }
-
-    function zoomImg(url) {
-      document.getElementById('modalImg').src = url;
-      document.getElementById('imgModal').style.display = 'flex';
-    }
-
-    async function clearLogsHariIni() {
-      if (confirm("Kosongkan seluruh log bukti foto?")) {
-        await supabase.from('piket_logs').delete().neq('id', 0);
-        loadLogsAdmin();
-      }
-    }
-
-    async function exportDataLog() {
-      const { data: logs } = await supabase.from('piket_logs').select('*');
-      if (!logs) return alert("Data kosong!");
-      let csv = "Waktu,Nama,Shift,Status,Foto URL\n";
-      logs.forEach(l => {
-        const m = membersAll.find(x => x.id.toString() === l.member_id.toString());
-        csv += `"${new Date(l.created_at).toLocaleString('id-ID')}","${m ? m.nama : ''}","${l.shift}","${l.status}","${l.foto_url}"\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `Rekap_Piket.csv`; a.click();
-    }
-
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const today = days[new Date().getDay()];
-    if (document.querySelector(`#select-hari option[value="${today}"]`)) {
-      document.getElementById('select-hari').value = today;
     }
   </script>
 </body>

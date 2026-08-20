@@ -111,10 +111,14 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    // Penanganan Inisialisasi Supabase Aman (Bebas 'already been declared')
+    if (typeof supabaseClient === 'undefined') {
+      const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
+      var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+    
+    const db = supabaseClient;
     const BUCKET_NAME = "piket-buktifoto"; 
     let currentSchedule = [];
 
@@ -144,8 +148,8 @@
       selectMember.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
 
       try {
-        // 1. Ambil Data Anggota
-        const { data: membersData, error: memErr } = await supabase.from('members').select('*');
+        // 1. Ambil Data Members
+        const { data: membersData, error: memErr } = await db.from('members').select('*');
         if (memErr) throw memErr;
 
         const memberMap = {};
@@ -154,14 +158,14 @@
         }
 
         // 2. Ambil Data Logs
-        const { data: logs } = await supabase.from('piket_logs').select('*');
+        const { data: logs } = await db.from('piket_logs').select('*');
         const logMap = {};
         if (logs && Array.isArray(logs)) {
           logs.forEach(l => { if(l.member_id) logMap[l.member_id] = l.status; });
         }
 
-        // 3. Ambil Jadwal Sesuai Hari Dropdown
-        const { data: scheduleData, error: schedErr } = await supabase
+        // 3. Ambil Data Schedule
+        const { data: scheduleData, error: schedErr } = await db
           .from('piket_schedule')
           .select('*')
           .eq('hari', hari);
@@ -176,7 +180,7 @@
         currentSchedule = scheduleData;
         tbody.innerHTML = '';
 
-        // 4. Render ke Tabel
+        // 4. Render Hasil ke Tabel
         scheduleData.forEach(item => {
           const m = memberMap[item.member_id];
           if (m) {
@@ -201,7 +205,7 @@
 
       } catch (err) {
         console.error("Detail Error:", err);
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #e53e3e;">Gagal memuat data. Tekan F12 untuk cek Console.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #e53e3e;">Gagal memuat data. Cek Console F12.</td></tr>`;
       }
     }
 
@@ -216,33 +220,35 @@
     document.getElementById('form-upload').addEventListener('submit', async (e) => {
       e.preventDefault();
       const statusPesan = document.getElementById('pesan-status');
-      statusPesan.style.color = "#3182ce"; statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
+      statusPesan.style.color = "#3182ce"; 
+      statusPesan.innerText = "⏳ Sedang mengunggah foto bukti...";
 
       const memberId = document.getElementById('select-member').value;
       const shift = document.getElementById('select-shift').value;
       const file = document.getElementById('input-foto').files[0];
 
       if (!memberId) {
-        statusPesan.style.color = "#e53e3e"; statusPesan.innerText = "❌ Pilih nama kamu!";
+        statusPesan.style.color = "#e53e3e"; 
+        statusPesan.innerText = "❌ Pilih nama kamu terlebih dahulu!";
         return;
       }
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${memberId}.${fileExt}`;
 
-      const { error: uploadErr } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file);
+      const { error: uploadErr } = await db.storage.from(BUCKET_NAME).upload(fileName, file);
 
       if (uploadErr) {
         console.error(uploadErr);
         statusPesan.style.color = "#e53e3e";
-        statusPesan.innerText = `❌ Gagal upload foto. Pastikan Bucket '${BUCKET_NAME}' di Supabase sudah Public!`;
+        statusPesan.innerText = `❌ Gagal upload. Pastikan Bucket '${BUCKET_NAME}' di Supabase bertipe Public!`;
         return;
       }
 
-      const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+      const { data: urlData } = db.storage.from(BUCKET_NAME).getPublicUrl(fileName);
       const fotoUrl = urlData.publicUrl;
 
-      await supabase.from('piket_logs').insert([{
+      await db.from('piket_logs').insert([{
         member_id: memberId,
         shift: shift,
         foto_url: fotoUrl,
@@ -256,7 +262,7 @@
       loadScheduleSiswa();
     });
 
-    // Otomatis pilih hari ini di dropdown
+    // Otomatis tentukan hari ini di dropdown
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     document.getElementById('filter-hari').value = today;

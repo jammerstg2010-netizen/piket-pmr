@@ -9,7 +9,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
     body { background: #f4f7f6; min-height: 100vh; padding: 20px; color: #2d3748; }
-    .container { max-width: 1000px; margin: 0 auto; }
+    .container { max-width: 1100px; margin: 0 auto; }
     
     #login-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -33,22 +33,79 @@
     .btn-red { background: #e53e3e; color: white; }
     .btn-blue { background: #3182ce; color: white; }
     .btn-green { background: #38a169; color: white; }
+    .btn-gray { background: #718096; color: white; }
+    .btn-darkred { background: #9b2c2c; color: white; }
     
     .header-card {
       background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%);
       padding: 24px; border-radius: 20px; text-align: center; color: white; margin-bottom: 24px;
     }
     .card { background: white; border-radius: 18px; padding: 22px; margin-bottom: 24px; border: 1px solid #edf2f7; }
+    
+    /* GRID DUA KOLOM DENGAN SCROLL MANDIRI */
+    .drag-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .drag-grid { grid-template-columns: 1fr; }
+    }
+
+    /* KOTAK SCROLL SISWA FASE E & FASE F */
+    .fase-box {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e0;
+      border-radius: 12px;
+      padding: 10px;
+      height: 180px; /* Lebar dan tinggi pas agar tidak makan layar */
+      overflow-y: auto; /* Scroll hanya ada di dalam kotak ini */
+      margin-bottom: 12px;
+    }
+
+    /* KOTAK SHIFT TARGET */
+    .shift-target {
+      background: #f1f5f9;
+      border: 2px dashed #94a3b8;
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 150px;
+      max-height: 180px;
+      overflow-y: auto;
+      margin-top: 6px;
+    }
+
+    /* KARTU MEMBER */
+    .draggable-card {
+      background: white;
+      border: 1px solid #cbd5e0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: grab;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .draggable-card:active { cursor: grabbing; transform: scale(0.98); }
+
+    .btn-delete-member {
+      color: #e53e3e;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 4px;
+      border: none;
+      background: transparent;
+    }
+    .btn-delete-member:hover { color: #9b2c2c; }
+
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    .drag-box-container, .shift-target {
-      background: #f7fafc; border: 2px dashed #cbd5e0; border-radius: 12px; padding: 12px; min-height: 150px;
-    }
-    .draggable-card {
-      background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 8px;
-      cursor: grab; font-size: 13px; display: flex; justify-content: space-between;
-    }
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; text-align: left; }
@@ -78,6 +135,7 @@
       <p>Kelola Shift Harian & Validasi Laporan Bukti Foto</p>
     </div>
 
+    <!-- TAMBAH ANGGOTA -->
     <div class="card">
       <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">➕ Tambah Anggota PMR</h3>
       <div class="grid-2">
@@ -92,6 +150,7 @@
       </div>
     </div>
 
+    <!-- DRAG AND DROP SHIFT TERPISAH FASE E & F -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="font-size:15px; color:#2b6cb0;">📌 Susun Shift Pertugasan</h3>
@@ -104,27 +163,45 @@
         </select>
       </div>
 
-      <div class="grid-2">
+      <div class="drag-grid">
+        <!-- KOLOM KIRI: DUA KOTAK MANDIRI (FASE E & FASE F) -->
         <div>
-          <label style="font-size: 12px; font-weight: bold;">📇 Anggota Belum Dijadwalkan:</label>
-          <div id="source-list" class="drag-box-container" style="margin-top:6px;" ondrop="drop(event, 'source')" ondragover="allowDrop(event)"></div>
+          <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">📇 Belum Dijadwalkan (Fase E):</label>
+          <div id="source-fase-e" class="fase-box" ondrop="drop(event, 'source-e')" ondragover="allowDrop(event)"></div>
+
+          <label style="font-size: 12px; font-weight: bold; color: #d69e2e;">📇 Belum Dijadwalkan (Fase F):</label>
+          <div id="source-fase-f" class="fase-box" ondrop="drop(event, 'source-f')" ondragover="allowDrop(event)"></div>
         </div>
+
+        <!-- KOLOM KANAN: KOTAK TARGET SHIFT -->
         <div>
-          <label style="font-size: 12px; font-weight: bold;">⏰ Shift Istirahat 1:</label>
-          <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
+          <div>
+            <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
+            <div id="target-shift-1" class="shift-target" ondrop="drop(event, 'Shift Istirahat 1')" ondragover="allowDrop(event)"></div>
+          </div>
           
-          <div id="container-shift-2" style="margin-top: 12px;">
-            <label style="font-size: 12px; font-weight: bold;">⏰ Shift Istirahat 2:</label>
+          <div id="container-shift-2" style="margin-top: 14px;">
+            <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 2:</label>
             <div id="target-shift-2" class="shift-target" ondrop="drop(event, 'Shift Istirahat 2')" ondragover="allowDrop(event)"></div>
           </div>
         </div>
       </div>
-      <button type="button" class="btn btn-red" style="margin-top: 16px;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
+
+      <!-- Aksi Jadwal -->
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-red" style="flex: 2;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
+        <button type="button" class="btn btn-gray" style="flex: 1;" onclick="clearJadwalHariIni()">🗑️ Kosongkan Shift Hari Ini</button>
+      </div>
       <div id="status-terbit" style="margin-top: 10px; font-size: 13px; text-align: center; font-weight: bold;"></div>
     </div>
 
+    <!-- VALIDASI FOTO & AMANIN DENGAN HAPUS LOG -->
     <div class="card">
-      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">📸 Validasi Absen Bukti Foto</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size:15px; color:#2b6cb0;">📸 Validasi Absen Bukti Foto</h3>
+        <button class="btn btn-darkred" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick="resetSemuaLogFoto()">⚠️ Reset / Hapus Semua Log Foto Test Run</button>
+      </div>
+
       <div class="table-responsive">
         <table>
           <thead>
@@ -164,7 +241,6 @@
     const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     
-    // VARIABEL 'db' DIGUNAKAN AGAR TIDAK BENTROK NAMA DENGAN LIBRARY SUPABASE GLOBAL
     let db, membersAll = [];
 
     async function initApp() {
@@ -191,28 +267,48 @@
       div.draggable = true;
       div.id = `member-${id}`;
       div.dataset.id = id;
+      div.dataset.fase = fase;
       div.ondragstart = (e) => e.dataTransfer.setData("text/plain", id);
-      div.innerHTML = `<span><b>${nama}</b></span><span style="color:#3182ce; font-weight:bold;">Fase ${fase}</span>`;
+      
+      div.innerHTML = `
+        <span><b>${nama}</b> <small style="color:#718096;">(Fase ${fase})</small></span>
+        <button class="btn-delete-member" onclick="hapusAnggota(event, ${id}, '${nama}')" title="Hapus Siswa">✕</button>
+      `;
       return div;
     }
 
     function allowDrop(e) { e.preventDefault(); }
+    
     function drop(e, targetZone) {
       e.preventDefault();
       const id = e.dataTransfer.getData("text/plain");
       const card = document.getElementById(`member-${id}`);
       if (!card) return;
 
-      if (targetZone === 'Shift Istirahat 1') document.getElementById('target-shift-1').appendChild(card);
-      else if (targetZone === 'Shift Istirahat 2') document.getElementById('target-shift-2').appendChild(card);
-      else document.getElementById('source-list').appendChild(card);
+      const fase = card.dataset.fase;
+
+      if (targetZone === 'Shift Istirahat 1') {
+        document.getElementById('target-shift-1').appendChild(card);
+      } else if (targetZone === 'Shift Istirahat 2') {
+        document.getElementById('target-shift-2').appendChild(card);
+      } else {
+        // Kembalikan ke kotaknya masing-masing (E atau F)
+        if (fase === 'E') {
+          document.getElementById('source-fase-e').appendChild(card);
+        } else {
+          document.getElementById('source-fase-f').appendChild(card);
+        }
+      }
     }
 
     async function loadJadwalHariIni() {
       const hari = document.getElementById('select-hari').value;
       const s1 = document.getElementById('target-shift-1');
       const s2 = document.getElementById('target-shift-2');
-      s1.innerHTML = ''; s2.innerHTML = '';
+      const boxE = document.getElementById('source-fase-e');
+      const boxF = document.getElementById('source-fase-f');
+
+      s1.innerHTML = ''; s2.innerHTML = ''; boxE.innerHTML = ''; boxF.innerHTML = '';
 
       if (hari === 'Jumat') {
         document.getElementById('container-shift-2').style.display = 'none';
@@ -235,10 +331,13 @@
         });
       }
 
-      const sourceBox = document.getElementById('source-list');
-      sourceBox.innerHTML = '';
+      // Masukkan anggota yang belum dijadwalkan sesuai Fase masing-masing
       membersAll.forEach(m => {
-        if (!assignedIds.has(m.id.toString())) sourceBox.appendChild(createMemberCard(m.id, m.nama, m.fase));
+        if (!assignedIds.has(m.id.toString())) {
+          const card = createMemberCard(m.id, m.nama, m.fase);
+          if (m.fase === 'E') boxE.appendChild(card);
+          else boxF.appendChild(card);
+        }
       });
     }
 
@@ -263,6 +362,16 @@
       status.innerText = `✅ Jadwal ${hari} berhasil terbit!`;
     }
 
+    async function clearJadwalHariIni() {
+      const hari = document.getElementById('select-hari').value;
+      if (confirm(`Kosongkan jadwal piket hari ${hari}?`)) {
+        await db.from('piket_schedule').delete().eq('hari', hari);
+        await loadJadwalHariIni();
+        document.getElementById('status-terbit').style.color = "#e53e3e";
+        document.getElementById('status-terbit').innerText = `🗑️ Jadwal ${hari} telah dikosongkan.`;
+      }
+    }
+
     async function tambahAnggota() {
       const nama = document.getElementById('nama-baru').value.trim();
       const fase = document.getElementById('fase-baru').value;
@@ -271,6 +380,16 @@
       document.getElementById('nama-baru').value = '';
       await loadMembers();
       await loadJadwalHariIni();
+    }
+
+    async function hapusAnggota(e, id, nama) {
+      e.stopPropagation(); // Mencegah pemicu event drag
+      if (confirm(`Hapus siswa "${nama}" dari database anggota?`)) {
+        await db.from('members').delete().eq('id', id);
+        await db.from('piket_schedule').delete().eq('member_id', id);
+        await loadMembers();
+        await loadJadwalHariIni();
+      }
     }
 
     async function loadLogsAdmin() {
@@ -296,8 +415,9 @@
             <td><a href="${log.foto_url}" target="_blank"><img src="${log.foto_url}" class="img-preview"></a></td>
             <td><b>${log.status}</b></td>
             <td>
-              <button class="btn btn-green" style="padding:4px 8px; font-size:11px; width:auto;" onclick="updateStatusLog(${log.id}, 'ACC')">ACC</button>
-              <button class="btn btn-red" style="padding:4px 8px; font-size:11px; width:auto;" onclick="updateStatusLog(${log.id}, 'Ditolak')">Tolak</button>
+              <button class="btn btn-green" style="padding:4px 8px; font-size:11px; width:auto; display:inline-block;" onclick="updateStatusLog(${log.id}, 'ACC')">ACC</button>
+              <button class="btn btn-red" style="padding:4px 8px; font-size:11px; width:auto; display:inline-block;" onclick="updateStatusLog(${log.id}, 'Ditolak')">Tolak</button>
+              <button class="btn btn-gray" style="padding:4px 8px; font-size:11px; width:auto; display:inline-block;" onclick="hapusSatuLog(${log.id})">🗑️</button>
             </td>
           </tr>
         `;
@@ -307,6 +427,20 @@
     async function updateStatusLog(id, status) {
       await db.from('piket_logs').update({ status }).eq('id', id);
       loadLogsAdmin();
+    }
+
+    async function hapusSatuLog(id) {
+      if (confirm("Hapus baris foto laporan ini?")) {
+        await db.from('piket_logs').delete().eq('id', id);
+        loadLogsAdmin();
+      }
+    }
+
+    async function resetSemuaLogFoto() {
+      if (confirm("⚠️ YAKIN INGIN MENGHAPUS SEMUA LOG FOTO ABSENSI?\n\nFitur ini khusus digunakan saat membersihkan data uji coba (Test Run).")) {
+        await db.from('piket_logs').delete().neq('id', 0); // Hapus semua row
+        loadLogsAdmin();
+      }
     }
   </script>
 </body>

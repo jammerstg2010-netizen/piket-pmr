@@ -174,11 +174,14 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // BUCKET DISESUAIKAN SAMA ADMIN
+    const BUCKET_NAME = "piket-buktifoto"; 
+
     let currentSchedule = [];
 
     function checkExpired() {
       const currentHour = new Date().getHours();
-      if (currentHour >= 15) { // Expired setelah jam 15:00 WIB
+      if (currentHour >= 15) { 
         document.getElementById('expired-notice').style.display = 'block';
         document.getElementById('btn-submit').disabled = true;
       }
@@ -263,17 +266,24 @@
         return;
       }
 
-      const fileName = `${Date.now()}_${file.name}`;
-      const { error: uploadErr } = await supabase.storage.from('bukti-piket').upload(fileName, file);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${memberId}.${fileExt}`;
+
+      // 1. Upload ke Storage Bucket
+      const { error: uploadErr } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file);
 
       if (uploadErr) {
+        console.error(uploadErr);
         statusPesan.style.color = "#e53e3e";
-        statusPesan.innerText = "❌ Gagal upload foto. Pastikan Bucket Supabase 'bukti-piket' sudah Public!";
+        statusPesan.innerText = `❌ Gagal upload foto. Pastikan Bucket '${BUCKET_NAME}' sudah Public!`;
         return;
       }
 
-      const fotoUrl = `${SUPABASE_URL}/storage/v1/object/public/bukti-piket/${fileName}`;
+      // 2. Ambil Link Foto Public
+      const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+      const fotoUrl = urlData.publicUrl;
 
+      // 3. Simpan ke database piket_logs
       await supabase.from('piket_logs').insert([{
         member_id: memberId,
         shift: shift,
@@ -288,10 +298,13 @@
       loadScheduleSiswa();
     });
 
+    // AUTO DETEKSI HARI INI
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const today = days[new Date().getDay()];
     if (document.querySelector(`#filter-hari option[value="${today}"]`)) {
       document.getElementById('filter-hari').value = today;
+    } else {
+      document.getElementById('filter-hari').value = 'Senin'; // Default Senin jika Sabtu/Minggu
     }
 
     checkExpired();

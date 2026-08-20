@@ -10,6 +10,35 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
     body { background: #f4f7f6; background-image: radial-gradient(#cbd5e0 1px, transparent 1px); background-size: 20px 20px; min-height: 100vh; padding: 16px; color: #2d3748; }
     .container { max-width: 700px; margin: 0 auto; }
+    
+    /* STYLE RUNNING TEXT / ANNOUNCEMENT */
+    .ticker-wrap {
+      width: 100%;
+      background: #2b6cb0;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 10px rgba(43, 108, 176, 0.2);
+    }
+    .ticker-title {
+      background: #1a365d;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    marquee {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     .header-card { background: linear-gradient(135deg, #e53e3e 0%, #dd6b20 100%); padding: 20px; border-radius: 18px; text-align: center; color: white; box-shadow: 0 10px 20px rgba(229, 62, 62, 0.2); margin-bottom: 20px; }
     .header-card h1 { font-size: 22px; font-weight: 800; }
     .header-card p { font-size: 12px; opacity: 0.9; }
@@ -51,6 +80,12 @@
 <body>
 
   <div class="container">
+    <!-- WIDGET RUNNING TEXT PENGUMUMAN -->
+    <div class="ticker-wrap" id="ticker-box">
+      <span class="ticker-title">📢 Info</span>
+      <marquee id="running-text-content">Selamat bertugas untuk tim piket hari ini! Jaga kebersihan ruang UKS.</marquee>
+    </div>
+
     <div class="header-card">
       <h1>🏥 Absensi Piket UKS PMR</h1>
       <p>Jadwal Pertugasan & Pelaporan Foto Bukti</p>
@@ -160,8 +195,21 @@
     const BUCKET_NAME = "piket-buktifoto"; 
     let currentSchedule = [];
 
-    // Pengaturan Waktu Expired Default (15:30) & Custom
+    // Mengambil Pengaturan Expired & Running Text dari LocalStorage
     let customExpiredTime = localStorage.getItem('piket_expired_time') || "15:30";
+    let customAnnouncement = localStorage.getItem('piket_announcement') || "Selamat bertugas untuk tim piket hari ini! Jaga kebersihan ruang UKS.";
+
+    function loadAnnouncement() {
+      const runningTextElem = document.getElementById('running-text-content');
+      const tickerBox = document.getElementById('ticker-box');
+
+      if (customAnnouncement && customAnnouncement.trim() !== "") {
+        runningTextElem.innerText = customAnnouncement;
+        tickerBox.style.display = "flex";
+      } else {
+        tickerBox.style.display = "none";
+      }
+    }
 
     function updateRealtimeClock() {
       const now = new Date();
@@ -182,7 +230,6 @@
       const [expHour, expMin] = customExpiredTime.split(':').map(Number);
       document.getElementById('text-expired-time').innerText = customExpiredTime;
 
-      // Cek apakah waktu saat ini telah melewati batas jam & menit expired
       if (currentHour > expHour || (currentHour === expHour && currentMin >= expMin)) { 
         document.getElementById('expired-notice').style.display = 'block';
         document.getElementById('btn-submit').disabled = true;
@@ -341,10 +388,10 @@
     const today = days[new Date().getDay()];
     document.getElementById('filter-hari').value = today;
 
-    // Update Jam Realtime Setiap Detik
     setInterval(updateRealtimeClock, 1000);
     updateRealtimeClock();
 
+    loadAnnouncement();
     checkExpired();
     loadScheduleSiswa();
   </script>

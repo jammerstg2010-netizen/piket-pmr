@@ -101,8 +101,7 @@
     .btn-delete-member:hover { color: #9b2c2c; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -133,32 +132,7 @@
   <div class="container" id="admin-content" style="display: none;">
     <div class="header-card">
       <h1>🚑 Panel Admin Piket UKS PMR</h1>
-      <p>Kelola Shift Harian, Durasi Waktu, Pengumuman & Validasi Laporan</p>
-    </div>
-
-    <!-- PENGATURAN SISTEM & JAM EXPIRED SHIFT -->
-    <div class="card">
-      <h3 style="margin-bottom:12px; font-size:15px; color:#2b6cb0;">⚙️ Pengaturan Jam Expired & Durasi Shift</h3>
-      
-      <div class="grid-3" style="margin-bottom: 12px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: #4a5568;">⏰ Expired Shift 1 (Umum):</label>
-          <input type="time" id="input-exp-s1" class="form-control" value="09:50">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: #4a5568;">⏰ Expired Shift 2 (Umum):</label>
-          <input type="time" id="input-exp-s2" class="form-control" value="13:00">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: #4a5568;">📢 Running Text:</label>
-          <input type="text" id="input-announcement" class="form-control" placeholder="Pengumuman...">
-        </div>
-      </div>
-      
-      <div style="display: flex; gap: 10px;">
-        <button type="button" class="btn btn-blue" onclick="simpanPengaturanSistem()">💾 Simpan Pengaturan Sistem</button>
-      </div>
-      <div id="status-config" style="margin-top: 8px; font-size: 12px; font-weight: bold; text-align: center;"></div>
+      <p>Kelola Shift Harian Senin - Jumat & Validasi Laporan</p>
     </div>
 
     <!-- TAMBAH ANGGOTA -->
@@ -191,7 +165,7 @@
 
       <!-- Keterangan Jam Shift Berdasarkan Hari -->
       <div id="info-jam-shift" style="background: #edf2f7; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 14px; font-weight: 600; color: #2c5282;">
-        ℹ️ Jadwal Shift Hari Ini: Istirahat 1 (09:05 - 09:35) | Istirahat 2 (12:15 - 13:00)
+        ℹ️ Jadwal Shift Senin: Istirahat 1 (09:05 - 09:35) | Istirahat 2 (12:15 - 13:00)
       </div>
 
       <div class="drag-grid">
@@ -221,7 +195,7 @@
       <!-- AKSI JADWAL -->
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button type="button" class="btn btn-red" style="flex: 2;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
-        <button type="button" class="btn btn-gray" style="flex: 1;" onclick="clearJadwalHariIni()">🗑️ Kosongkan Shift Hari Ini</button>
+        <button type="button" class="btn btn-gray" style="flex: 1;" onclick="clearJadwalHariIni()">🗑️ Kosongkan Shift</button>
       </div>
       <div id="status-terbit" style="margin-top: 10px; font-size: 13px; text-align: center; font-weight: bold;"></div>
     </div>
@@ -232,7 +206,7 @@
         <h3 style="font-size:15px; color:#2b6cb0;">📱 Rekap Piket untuk WhatsApp (Otomatis & Real-time)</h3>
         <button class="btn-refresh" onclick="generateRekapWA()">🔄 Refresh Rekap</button>
       </div>
-      <p style="font-size: 12px; color: #718096; margin-bottom: 10px;">Status keaktifan dan kehadiran ditarik otomatis dari tabel absensi dan durasi shift saat ini.</p>
+      <p style="font-size: 12px; color: #718096; margin-bottom: 10px;">Status keaktifan dan kehadiran ditarik otomatis dari tabel absensi.</p>
       
       <div style="margin-bottom: 10px;">
         <label style="font-size: 11px; font-weight: bold; color: #4a5568;">Preview Teks WA:</label>
@@ -299,7 +273,6 @@
       try {
         if (window.supabase) {
           db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-          loadConfigTersimpan();
           await loadMembers();
           await loadJadwalHariIni();
           await loadLogsAdmin();
@@ -307,33 +280,6 @@
       } catch (err) {
         console.error("Gagal load Supabase:", err);
       }
-    }
-
-    function loadConfigTersimpan() {
-      const expS1 = localStorage.getItem('piket_exp_s1') || "09:50";
-      const expS2 = localStorage.getItem('piket_exp_s2') || "13:00";
-      const runningText = localStorage.getItem('piket_announcement') || "Selamat bertugas untuk tim piket hari ini! Jaga kebersihan ruang UKS.";
-      
-      document.getElementById('input-exp-s1').value = expS1;
-      document.getElementById('input-exp-s2').value = expS2;
-      document.getElementById('input-announcement').value = runningText;
-    }
-
-    function simpanPengaturanSistem() {
-      const expS1 = document.getElementById('input-exp-s1').value;
-      const expS2 = document.getElementById('input-exp-s2').value;
-      const runningText = document.getElementById('input-announcement').value.trim();
-
-      if (!expS1 || !expS2) return alert("Lengkapi jam expired shift!");
-
-      localStorage.setItem('piket_exp_s1', expS1);
-      localStorage.setItem('piket_exp_s2', expS2);
-      localStorage.setItem('piket_announcement', runningText);
-
-      const status = document.getElementById('status-config');
-      status.style.color = "#38a169";
-      status.innerText = "✅ Pengaturan sistem berhasil disimpan!";
-      setTimeout(() => { status.innerText = ""; }, 3000);
     }
 
     async function loadMembers() {
@@ -542,28 +488,28 @@
     }
 
     async function resetSemuaLogFoto() {
-      if (confirm("⚠️ YAKIN INGIN MENGHAPUS SEMUA LOG FOTO ABSENSI?\n\nFitur ini khusus digunakan saat membersihkan data uji coba (Test Run).")) {
+      if (confirm("⚠️ YAKIN INGIN MENGHAPUS SEMUA LOG FOTO ABSENSI?\n\nFitur ini khusus digunakan saat membersihkan data uji coba.")) {
         await db.from('piket_logs').delete().neq('id', 0);
         loadLogsAdmin();
       }
     }
 
-    // --- GENERATE REKAP OTOMATIS BERDASARKAN SHIFT, TANGGAL, & TABEL ---
     async function generateRekapWA() {
       const hari = document.getElementById('select-hari').value;
       const s1Cards = document.querySelectorAll('#target-shift-1 .draggable-card');
       const s2Cards = document.querySelectorAll('#target-shift-2 .draggable-card');
 
-      // Format Tanggal Hari Ini
       const optionsTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       const tanggalHariIni = new Date().toLocaleDateString('id-ID', optionsTanggal);
 
-      // Cek Waktu Sekarang untuk Status Shift 2
       const now = new Date();
       const jamSekarang = now.getHours() * 60 + now.getMinutes();
-      const expS1Str = document.getElementById('input-exp-s1').value || "09:50";
-      const [expH, expM] = expS1Str.split(':').map(Number);
-      const batasMenitShift1 = expH * 60 + expM; 
+      
+      // Batas waktu shift 1 otomatis berdasarkan hari (Senin: 09:35, Selasa-Kamis: 09:50, Jumat: 09:40)
+      let batasMenitShift1 = 9 * 60 + 50; 
+      if (hari === 'Senin') batasMenitShift1 = 9 * 60 + 35;
+      else if (hari === 'Jumat') batasMenitShift1 = 9 * 60 + 40;
+
       const shift2BelumMulai = jamSekarang < batasMenitShift1;
 
       let text = `📋 *LAPORAN & REKAP PIKET UKS PMR*\n`;
@@ -581,7 +527,6 @@
         return "❌ Belum absen";
       };
 
-      // --- SHIFT ISTIRAHAT 1 ---
       text += `⏰ *SHIFT ISTIRAHAT 1*\n`;
       if (s1Cards.length === 0) {
         text += `- Belum ada petugas.\n`;
@@ -594,7 +539,6 @@
         });
       }
 
-      // --- SHIFT ISTIRAHAT 2 ---
       if (hari !== 'Jumat') {
         text += `\n────────────────────────\n`;
         text += `⏰ *SHIFT ISTIRAHAT 2*\n`;

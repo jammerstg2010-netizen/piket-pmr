@@ -147,7 +147,7 @@
       <h2>🔐 Login Admin UKS</h2>
       <p style="font-size: 12px; color: #718096; margin-bottom: 16px;">Masukkan Username & PIN Admin</p>
       
-      <input type="text" id="admin-user" class="form-control" placeholder="Username (misal: Jammer)" autocomplete="off" required>
+      <input type="text" id="admin-user" class="form-control" placeholder="Username Admin" autocomplete="off" required>
       <input type="password" id="admin-pass" class="form-control" placeholder="PIN Admin" required>
       
       <button type="submit" id="btn-login-trigger" class="btn btn-red">Masuk Panel Admin</button>
@@ -164,9 +164,9 @@
       <div id="profile-badge" class="badge-profile">Admin UKS</div>
     </div>
 
-    <!-- PANEL KHUSUS OBED RIFALDY: CUSTOMIZE WALLPAPER & PROFILE -->
-    <div class="card" id="obed-special-panel" style="display: none; border: 2px solid #805ad5;">
-      <h3 style="margin-bottom:12px; font-size:15px; color:#6b46c1;">✨ Profil Khusus & Custom Wallpaper (Obed Rifaldy)</h3>
+    <!-- PANEL CUSTOM WALLPAPER (OTOMATIS DIAMBIL DARI DATA USER YANG LOGIN) -->
+    <div class="card" style="border: 2px solid #805ad5;">
+      <h3 style="margin-bottom:12px; font-size:15px; color:#6b46c1;">✨ Custom Wallpaper Background</h3>
       <p style="font-size: 12px; color: #718096; margin-bottom: 12px;">Atur tampilan wallpaper background dashboard admin sesuai keinginan Anda.</p>
       
       <div class="grid-2">
@@ -305,6 +305,7 @@
       loadCustomWallpaper();
     };
 
+    // PROSES LOGIN DINAMIS DARI TABEL `admins` SUPABASE
     async function prosesLogin(e) {
       if (e) e.preventDefault();
       
@@ -315,6 +316,7 @@
       errBox.innerText = "⏳ Memeriksa data...";
 
       try {
+        // Query langsung mengecek kolom `username` dan `pin` di tabel `admins`
         const { data, error } = await db.from('admins')
           .select('*')
           .eq('username', u)
@@ -326,6 +328,7 @@
           return;
         }
 
+        // Data admin tersimpan dinamis dari Supabase (termasuk kolom nama & jabatan)
         currentAdmin = data;
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('admin-content').style.display = 'block';
@@ -338,22 +341,18 @@
       }
     }
 
+    // SAPAAN DINAMIS MENGGUNAKAN NAMA DAN JABATAN DARI SUPABASE
     function renderHeaderGreeting(admin) {
       const welcomeTitle = document.getElementById('welcome-title');
       const welcomeSubtitle = document.getElementById('welcome-subtitle');
       const profileBadge = document.getElementById('profile-badge');
-      const obedPanel = document.getElementById('obed-special-panel');
 
-      welcomeTitle.innerText = `Hai, ${admin.nama}! 👋`;
-      welcomeSubtitle.innerText = `Selamat datang kembali di Dashboard ${admin.jabatan || 'Admin UKS'}`;
-      profileBadge.innerText = `${admin.jabatan || 'Admin'} — ${admin.nama}`;
+      const namaAdmin = admin.nama || admin.username || 'Admin';
+      const jabatanAdmin = admin.jabatan || 'Admin UKS';
 
-      // Cek apakah akun yang login adalah Obed Rifaldy (ID #1 / Nama Obed Rifaldy)
-      if (admin.id == 1 || admin.nama.toLowerCase().includes('obed rifaldy')) {
-        obedPanel.style.display = 'block';
-      } else {
-        obedPanel.style.display = 'none';
-      }
+      welcomeTitle.innerText = `Hai, ${namaAdmin}! 👋`;
+      welcomeSubtitle.innerText = `Selamat datang kembali di Dashboard ${jabatanAdmin}`;
+      profileBadge.innerText = `${jabatanAdmin} — ${namaAdmin}`;
     }
 
     function logoutAdmin() {

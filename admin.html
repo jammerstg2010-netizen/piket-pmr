@@ -300,7 +300,6 @@
       }
       loadCustomWallpaper();
       
-      // Paksa reset form login
       document.getElementById('admin-user').value = '';
       document.getElementById('admin-pass').value = '';
     };
@@ -315,17 +314,19 @@
       const passInput = document.getElementById('admin-pass').value.trim();
       const errBox = document.getElementById('login-err');
 
+      document.getElementById('admin-content').style.display = 'none';
+      document.getElementById('login-overlay').style.display = 'flex';
+
       if (!userInput || !passInput) {
         errBox.style.color = "#e53e3e";
         errBox.innerText = "❌ Harap isi Username dan PIN!";
-        return;
+        return false;
       }
 
       errBox.style.color = "#3182ce";
       errBox.innerText = "⏳ Memeriksa ke database Supabase...";
 
       try {
-        // Validasi Kunci Ketat: Langsung mencocokkan ke tabel 'admins'
         const { data, error } = await db
           .from('admins')
           .select('id, username, pin, nama, jabatan')
@@ -336,17 +337,15 @@
           console.error("Supabase Error:", error);
           errBox.style.color = "#e53e3e";
           errBox.innerText = "❌ Gagal Terhubung Server!";
-          return;
+          return false;
         }
 
-        // VALIDASI MUTLAK: Jika data tidak persis 1, DITOLAK KERAS!
-        if (!data || data.length !== 1) {
+        if (!data || data.length === 0) {
           errBox.style.color = "#e53e3e";
-          errBox.innerText = '❌ AKUN DITOLAK! Username atau PIN tidak ada di Database!';
-          return;
+          errBox.innerText = "❌ AKUN DITOLAK! Username atau PIN tidak ada di Database!";
+          return false;
         }
 
-        // Jika Cocok dengan Data Supabase
         currentAdmin = data[0];
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('admin-content').style.display = 'block';
@@ -357,7 +356,8 @@
       } catch (err) {
         console.error("Error Login:", err);
         errBox.style.color = "#e53e3e";
-        errBox.innerText = '❌ Terjadi Kesalahan Sitem!';
+        errBox.innerText = '❌ Terjadi Kesalahan Sistem!';
+        return false;
       }
     }
 

@@ -164,7 +164,7 @@
       <div id="profile-badge" class="badge-profile">Admin UKS</div>
     </div>
 
-    <!-- PANEL CUSTOM WALLPAPER (OTOMATIS DIAMBIL DARI DATA USER YANG LOGIN) -->
+    <!-- PANEL CUSTOM WALLPAPER -->
     <div class="card" style="border: 2px solid #805ad5;">
       <h3 style="margin-bottom:12px; font-size:15px; color:#6b46c1;">✨ Custom Wallpaper Background</h3>
       <p style="font-size: 12px; color: #718096; margin-bottom: 12px;">Atur tampilan wallpaper background dashboard admin sesuai keinginan Anda.</p>
@@ -193,7 +193,7 @@
       </div>
     </div>
 
-    <!-- DRAG AND DROP SHIFT TERPISAH FASE E & F -->
+    <!-- DRAG AND DROP SHIFT -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="font-size:15px; color:#2b6cb0;">📌 Susun Shift Pertugasan</h3>
@@ -206,13 +206,11 @@
         </select>
       </div>
 
-      <!-- Keterangan Jam Shift Berdasarkan Hari -->
       <div id="info-jam-shift" style="background: #edf2f7; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 14px; font-weight: 600; color: #2c5282;">
         ℹ️ Jadwal Shift Senin: Istirahat 1 (09:05 - 09:35) | Istirahat 2 (12:15 - 13:00)
       </div>
 
       <div class="drag-grid">
-        <!-- KOLOM KIRI -->
         <div>
           <label style="font-size: 12px; font-weight: bold; color: #2b6cb0;">📇 Belum Dijadwalkan (Fase E):</label>
           <div id="source-fase-e" class="fase-box" ondrop="drop(event, 'source-e')" ondragover="allowDrop(event)"></div>
@@ -221,7 +219,6 @@
           <div id="source-fase-f" class="fase-box" ondrop="drop(event, 'source-f')" ondragover="allowDrop(event)"></div>
         </div>
 
-        <!-- KOLOM KANAN -->
         <div>
           <div>
             <label id="label-shift-1" style="font-size: 12px; font-weight: bold; color: #2b6cb0;">⏰ Shift Istirahat 1:</label>
@@ -235,7 +232,6 @@
         </div>
       </div>
 
-      <!-- AKSI JADWAL -->
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button type="button" class="btn btn-red" style="flex: 2;" onclick="terbitkanJadwal()">🚀 Terbitkan Jadwal Hari Ini</button>
         <button type="button" class="btn btn-gray" style="flex: 1;" onclick="clearJadwalHariIni()">🗑️ Kosongkan Shift</button>
@@ -243,7 +239,7 @@
       <div id="status-terbit" style="margin-top: 10px; font-size: 13px; text-align: center; font-weight: bold;"></div>
     </div>
 
-    <!-- FITUR REKAP PIKET UNTUK KIRIM KE WA -->
+    <!-- REKAP WA -->
     <div class="card" style="border: 2px solid #3182ce;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h3 style="font-size:15px; color:#2b6cb0;">📱 Rekap Piket untuk WhatsApp (Otomatis & Real-time)</h3>
@@ -305,7 +301,7 @@
       loadCustomWallpaper();
     };
 
-    // PROSES LOGIN DINAMIS DARI TABEL `admins` SUPABASE
+    // PROSES LOGIN DINAMIS & MURNI DARI DATABASE SUPABASE
     async function prosesLogin(e) {
       if (e) e.preventDefault();
       
@@ -313,35 +309,52 @@
       const p = document.getElementById('admin-pass').value.trim();
       const errBox = document.getElementById('login-err');
 
-      errBox.innerText = "⏳ Memeriksa data...";
+      errBox.style.color = "#3182ce";
+      errBox.innerText = "⏳ Memeriksa database...";
 
       try {
-        // Query langsung mengecek kolom `username` dan `pin` di tabel `admins`
-        const { data, error } = await db.from('admins')
-          .select('*')
-          .eq('username', u)
-          .eq('pin', p)
-          .single();
+        // Ambil seluruh baris tabel admins tanpa metode .single()
+        const { data: admins, error } = await db.from('admins').select('*');
 
-        if (error || !data) {
+        if (error) {
+          console.error("Supabase Error:", error);
+          errBox.style.color = "#e53e3e";
+          errBox.innerText = "❌ Error Supabase: " + error.message;
+          return;
+        }
+
+        if (!admins || admins.length === 0) {
+          errBox.style.color = "#e53e3e";
+          errBox.innerText = '❌ Tabel admin kosong atau RLS memblokir akses!';
+          return;
+        }
+
+        // Pencocokan fleksibel tanpa membedakan kapitalisasi & spasi
+        const adminCocok = admins.find(a => 
+          a.username && a.username.toString().trim().toLowerCase() === u.toLowerCase() &&
+          a.pin && a.pin.toString().trim() === p
+        );
+
+        if (!adminCocok) {
+          errBox.style.color = "#e53e3e";
           errBox.innerText = '❌ Username atau PIN Salah!';
           return;
         }
 
-        // Data admin tersimpan dinamis dari Supabase (termasuk kolom nama & jabatan)
-        currentAdmin = data;
+        currentAdmin = adminCocok;
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('admin-content').style.display = 'block';
 
         renderHeaderGreeting(currentAdmin);
         initApp();
+
       } catch (err) {
         console.error("Error Login:", err);
+        errBox.style.color = "#e53e3e";
         errBox.innerText = '❌ Gagal terhubung ke database!';
       }
     }
 
-    // SAPAAN DINAMIS MENGGUNAKAN NAMA DAN JABATAN DARI SUPABASE
     function renderHeaderGreeting(admin) {
       const welcomeTitle = document.getElementById('welcome-title');
       const welcomeSubtitle = document.getElementById('welcome-subtitle');

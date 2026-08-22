@@ -290,13 +290,16 @@
     const SUPABASE_URL = "https://dnyelqaypfftwswwyure.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRueWVscWF5cGZmdHdzd3d5dXJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NjY2NzgsImV4cCI6MjEwMjU0MjY3OH0.pce4AoBsxXXUIq5iTjg1PsXWPWmE9OyC_zrH91V5rvg";
     
-    let db, membersAll = [];
+    // Inisialisasi Supabase Client secara global agar aman
+    const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    
+    let membersAll = [];
     let latestLogsCache = [];
     let currentAdmin = null;
 
     window.onload = function() {
-      if (window.supabase) {
-        db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      if (!db) {
+        console.error("Gagal memuat Supabase SDK!");
       }
       loadCustomWallpaper();
       
@@ -313,9 +316,6 @@
       const userInput = document.getElementById('admin-user').value.trim();
       const passInput = document.getElementById('admin-pass').value.trim();
       const errBox = document.getElementById('login-err');
-
-      document.getElementById('admin-content').style.display = 'none';
-      document.getElementById('login-overlay').style.display = 'flex';
 
       if (!userInput || !passInput) {
         errBox.style.color = "#e53e3e";

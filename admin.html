@@ -143,17 +143,16 @@
 
   <!-- FORM LOGIN OVERLAY -->
   <div id="login-overlay">
-    <form class="login-card" onsubmit="prosesLogin(event)" autocomplete="off">
+    <div class="login-card">
       <h2>🔐 Login Admin UKS</h2>
       <p style="font-size: 12px; color: #718096; margin-bottom: 16px;">Masukkan Username & PIN Database Supabase</p>
       
-      <!-- Input dengan autocomplete diblokir agar browser tidak pakai password tersimpan -->
-      <input type="text" id="admin-user" class="form-control" placeholder="Username Admin" autocomplete="off" required>
-      <input type="password" id="admin-pass" class="form-control" placeholder="PIN Admin" autocomplete="new-password" required>
+      <input type="text" id="admin-user" class="form-control" placeholder="Username Admin" autocomplete="off">
+      <input type="password" id="admin-pass" class="form-control" placeholder="PIN Admin" autocomplete="off">
       
-      <button type="submit" id="btn-login-trigger" class="btn btn-red">Masuk Panel Admin</button>
+      <button type="button" id="btn-login-trigger" class="btn btn-red" onclick="prosesLogin(event)">Masuk Panel Admin</button>
       <div id="login-err" style="color: #e53e3e; font-size: 12px; margin-top: 12px; font-weight: bold;"></div>
-    </form>
+    </div>
   </div>
 
   <!-- DASHBOARD ADMIN -->
@@ -301,14 +300,16 @@
       }
       loadCustomWallpaper();
       
-      // Mengosongkan form saat pertama kali dimuat agar menghapus autofill browser
+      // Paksa reset form login
       document.getElementById('admin-user').value = '';
       document.getElementById('admin-pass').value = '';
     };
 
-    // PROSES LOGIN DINAMIS MURNI DARI DATABASE SUPABASE
     async function prosesLogin(e) {
-      if (e) e.preventDefault();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       
       const userInput = document.getElementById('admin-user').value.trim();
       const passInput = document.getElementById('admin-pass').value.trim();
@@ -321,31 +322,31 @@
       }
 
       errBox.style.color = "#3182ce";
-      errBox.innerText = "⏳ Memeriksa ke database...";
+      errBox.innerText = "⏳ Memeriksa ke database Supabase...";
 
       try {
-        // Murni mencocokkan langsung ke Supabase (tidak ada kode hardcode)
+        // Validasi Kunci Ketat: Langsung mencocokkan ke tabel 'admins'
         const { data, error } = await db
           .from('admins')
-          .select('*')
+          .select('id, username, pin, nama, jabatan')
           .eq('username', userInput)
           .eq('pin', passInput);
 
         if (error) {
           console.error("Supabase Error:", error);
           errBox.style.color = "#e53e3e";
-          errBox.innerText = "❌ Gagal terhubung: " + error.message;
+          errBox.innerText = "❌ Gagal Terhubung Server!";
           return;
         }
 
-        // Jika tidak ditemukan di database, DITOLAK MUTLAK!
-        if (!data || data.length === 0) {
+        // VALIDASI MUTLAK: Jika data tidak persis 1, DITOLAK KERAS!
+        if (!data || data.length !== 1) {
           errBox.style.color = "#e53e3e";
-          errBox.innerText = '❌ Username atau PIN Salah!';
+          errBox.innerText = '❌ AKUN DITOLAK! Username atau PIN tidak ada di Database!';
           return;
         }
 
-        // Akun ditemukan di Supabase
+        // Jika Cocok dengan Data Supabase
         currentAdmin = data[0];
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('admin-content').style.display = 'block';
@@ -356,7 +357,7 @@
       } catch (err) {
         console.error("Error Login:", err);
         errBox.style.color = "#e53e3e";
-        errBox.innerText = '❌ Terjadi kesalahan pada server!';
+        errBox.innerText = '❌ Terjadi Kesalahan Sitem!';
       }
     }
 
